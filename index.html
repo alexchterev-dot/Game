@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Chatterwheel</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Figtree:wght@400;600;800&display=swap">
+<style>
+/* Layout: a tabletop. The wheel board sits on dark felt; one panel beside it (below it on phones) runs the turn. */
+:root {
+  --felt: #12262c;
+  --felt-2: #183139;
+  --rail: #2a4851;
+  --ink: #f4efe3;
+  --muted: #9fb6b9;
+  --chalk: #fffaf0;
+
+  --c-things: #f2b134;
+  --c-nature: #3fae6e;
+  --c-actions: #ec5a41;
+  --c-places: #3d82dc;
+  --c-people: #b062d4;
+  --c-wild: #e9e4d6;
+
+  --good: #57d58c;
+  --bad: #ff7a66;
+
+  --f-display: "Bowlby One", "Arial Black", Impact, sans-serif;
+  --f-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background:
+    radial-gradient(1200px 700px at 30% 20%, #1c3a43 0%, transparent 60%),
+    var(--felt);
+  color: var(--ink);
+  font: 16px/1.5 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 16px 32px;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--c-things); outline-offset: 2px; }
+.wrap { max-width: 1080px; margin: 0 auto; display: grid; gap: 20px; }
+
+header.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.logo { font-family: var(--f-display); font-size: clamp(28px, 6vw, 44px); line-height: 1; letter-spacing: .5px; margin: 0; }
+.logo span { display: inline-block; }
+.logo span:nth-child(6n+1) { color: var(--c-things); }
+.logo span:nth-child(6n+2) { color: var(--c-nature); }
+.logo span:nth-child(6n+3) { color: var(--c-actions); }
+.logo span:nth-child(6n+4) { color: var(--c-places); }
+.logo span:nth-child(6n+5) { color: var(--c-people); }
+.logo span:nth-child(6n)   { color: var(--c-wild); }
+.tag { color: var(--muted); font-size: 14px; margin: 4px 0 0; }
+
+.btn {
+  border: 0; border-radius: 999px; padding: 12px 22px; font-weight: 800;
+  background: var(--chalk); color: #1a1a1a; letter-spacing: .2px;
+  box-shadow: 0 3px 0 rgba(0,0,0,.35);
+  transition: transform .08s ease;
+}
+.btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,.35); }
+.btn.ghost { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 2px var(--rail); }
+.btn.big { padding: 16px 30px; font-size: 18px; }
+.btn.good { background: var(--good); color: #0b2516; }
+.btn.bad { background: var(--bad); color: #2b0a05; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+
+.panel { background: var(--felt-2); border: 2px solid var(--rail); border-radius: 18px; padding: 20px; min-width: 0; }
+h2 { font-family: var(--f-display); font-weight: 400; font-size: 22px; margin: 0 0 12px; text-wrap: balance; letter-spacing: .3px; }
+.label { text-transform: uppercase; letter-spacing: 1.4px; font-size: 12px; font-weight: 800; color: var(--muted); }
+
+/* ---------- Setup ---------- */
+.setup { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 760px) { .setup { grid-template-columns: 1fr; } }
+.teams { display: grid; gap: 10px; }
+.team-row { display: grid; grid-template-columns: 28px 1fr 40px; gap: 10px; align-items: center; }
+.swatch { width: 24px; height: 24px; border-radius: 50%; border: 3px solid var(--chalk); }
+.team-row input {
+  width: 100%; min-width: 0; padding: 10px 12px; border-radius: 10px; border: 2px solid var(--rail);
+  background: var(--felt); color: var(--ink); font: inherit; font-weight: 600;
+}
+.icon-btn { width: 40px; height: 40px; border-radius: 10px; border: 2px solid var(--rail); background: transparent; font-weight: 800; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.seg { display: inline-flex; border: 2px solid var(--rail); border-radius: 999px; overflow: hidden; }
+.seg button { border: 0; background: transparent; padding: 8px 14px; font-weight: 700; }
+.seg button[aria-pressed="true"] { background: var(--chalk); color: #1a1a1a; }
+.field { display: grid; gap: 8px; }
+.rules ol { margin: 0; padding-left: 20px; display: grid; gap: 8px; color: var(--ink); }
+.rules p { color: var(--muted); margin: 12px 0 0; font-size: 14px; }
+.cat-key { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; font-weight: 800; font-size: 13px; letter-spacing: .6px; text-transform: uppercase; color: #161616; }
+
+/* ---------- Game ---------- */
+.game { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 820px) { .game { grid-template-columns: 1fr; } }
+.board-wrap { position: relative; width: 100%; max-width: 560px; margin: 0 auto; aspect-ratio: 1; }
+.board-wrap svg { width: 100%; height: 100%; display: block; }
+.side { display: grid; gap: 16px; }
+.score { display: grid; gap: 8px; }
+.score-row { display: grid; grid-template-columns: 22px 1fr auto; gap: 10px; align-items: center; padding: 8px 12px; border-radius: 12px; }
+.score-row.active { background: rgba(255,250,240,.08); box-shadow: inset 0 0 0 2px var(--chalk); }
+.score-row .dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--chalk); }
+.score-row .nm { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.score-row .pos { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 14px; }
+.up-next { display: grid; gap: 14px; }
+.up-next .who { font-family: var(--f-display); font-size: 28px; line-height: 1.1; overflow-wrap: anywhere; }
+.toolbar { display: flex; gap: 10px; flex-wrap: wrap; }
+.small { font-size: 14px; padding: 8px 14px; }
+
+/* ---------- Turn overlay ---------- */
+.overlay {
+  position: fixed; inset: 0; z-index: 20; background: rgba(8,18,21,.94);
+  display: grid; place-items: center;
+  padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  overflow-y: auto;
+}
+.turn { width: 100%; max-width: 520px; display: grid; gap: 18px; justify-items: center; text-align: center; }
+.timer { position: relative; width: 120px; height: 120px; }
+.timer svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.timer .num { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--f-display); font-size: 40px; font-variant-numeric: tabular-nums; }
+.timer.hurry .num { color: var(--bad); }
+.card {
+  width: 100%; background: var(--chalk); color: #161616; border-radius: 20px; padding: 26px 22px 30px;
+  box-shadow: 0 10px 0 rgba(0,0,0,.35); display: grid; gap: 12px; position: relative; overflow: hidden;
+}
+.card .band { position: absolute; inset: 0 0 auto 0; height: 10px; }
+.card .word { font-family: var(--f-display); font-size: clamp(30px, 8vw, 48px); line-height: 1.05; text-wrap: balance; overflow-wrap: anywhere; min-height: 1.1em; }
+.card.flip { animation: flip .22s ease; }
+@keyframes flip { from { transform: translateY(10px) rotate(-1.5deg); opacity: .4; } to { transform: none; opacity: 1; } }
+.turn .actions { display: grid; grid-template-columns: 1fr 1.6fr; gap: 12px; width: 100%; }
+.turn .actions .btn { padding: 18px 10px; font-size: 20px; }
+.tally { display: flex; gap: 18px; color: var(--muted); font-weight: 700; font-variant-numeric: tabular-nums; }
+.tally b { color: var(--ink); }
+.hint { color: var(--muted); font-size: 13px; }
+
+.review-list { list-style: none; margin: 0; padding: 0; width: 100%; display: grid; gap: 8px; max-height: 46vh; overflow-y: auto; }
+.review-list li { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 12px; background: var(--felt-2); text-align: left; }
+.review-list .w { font-weight: 700; overflow-wrap: anywhere; }
+.review-list button { border: 0; border-radius: 999px; padding: 6px 12px; font-weight: 800; font-size: 13px; min-width: 92px; }
+.review-list button.ok { background: var(--good); color: #0b2516; }
+.review-list button.no { background: transparent; box-shadow: inset 0 0 0 2px var(--rail); color: var(--muted); }
+
+.win-title { font-family: var(--f-display); font-size: clamp(34px, 9vw, 60px); line-height: 1; margin: 0; overflow-wrap: anywhere; }
+
+@media (prefers-reduced-motion: reduce) {
+  .card.flip { animation: none; }
+  .btn { transition: none; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1 class="logo" aria-label="Chatterwheel"></h1>
+      <p class="tag">The fast-talking describe-it party game. One phone, two to six teams.</p>
+    </div>
+    <div class="toolbar" id="topTools" hidden>
+      <button class="btn ghost small" id="btnSound" type="button">Sound: on</button>
+      <button class="btn ghost small" id="btnNew" type="button">New game</button>
+    </div>
+  </header>
+
+  <!-- SETUP -->
+  <section id="setupView" class="setup">
+    <div class="panel">
+      <h2>Teams</h2>
+      <div class="teams" id="teamList"></div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn ghost small" id="btnAddTeam" type="button">Add a team</button>
+      </div>
+      <div class="field" style="margin-top:20px">
+        <span class="label">Seconds per turn</span>
+        <div class="seg" id="segTime" role="group" aria-label="Seconds per turn">
+          <button type="button" data-v="30">30</button>
+          <button type="button" data-v="45">45</button>
+          <button type="button" data-v="60">60</button>
+        </div>
+      </div>
+      <div class="field" style="margin-top:16px">
+        <span class="label">Board length</span>
+        <div class="seg" id="segLaps" role="group" aria-label="Board length">
+          <button type="button" data-v="25">Quick · 24</button>
+          <button type="button" data-v="37">Classic · 36</button>
+          <button type="button" data-v="49">Long · 48</button>
+        </div>
+      </div>
+      <div class="row" style="margin-top:22px">
+        <button class="btn big" id="btnStart" type="button">Start the game</button>
+        <button class="btn ghost" id="btnResume" type="button" hidden>Resume last game</button>
+      </div>
+    </div>
+    <div class="panel rules">
+      <h2>How to play</h2>
+      <ol>
+        <li>Each team picks a <b>describer</b> for the turn. Everyone else on the team guesses.</li>
+        <li>The describer gets words from the category of the space their team is standing on.</li>
+        <li>Describe without saying the word, any part of it, or "rhymes with". No acting it out.</li>
+        <li>Tap <b>Got it</b> when your team shouts the answer, or <b>Pass</b> to skip. Passing costs nothing but time.</li>
+        <li>When the timer runs out, check the list and move one space for every word guessed.</li>
+        <li>First team round the wheel and back to the start wins.</li>
+      </ol>
+      <div class="cat-key" id="catKey"></div>
+      <p>Wildcard spaces mix words from every category, plus some odd extras. Rotate the describer each turn.</p>
+    </div>
+  </section>
+
+  <!-- GAME -->
+  <section id="gameView" class="game" hidden>
+    <div class="board-wrap"><svg id="board" viewBox="0 0 400 400" role="img" aria-label="Game board"></svg></div>
+    <div class="side">
+      <div class="panel up-next">
+        <span class="label">Up next</span>
+        <div class="who" id="upWho"></div>
+        <div class="row"><span class="label">Category</span><span class="chip" id="upCat"></span></div>
+        <p class="hint" id="upHint" style="margin:0">Hand the phone to this team's describer. Only they look at the screen.</p>
+        <div class="row"><button class="btn big" id="btnGo" type="button">Start turn</button></div>
+      </div>
+      <div class="panel">
+        <h2>Standings</h2>
+        <div class="score" id="scoreList"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- TURN OVERLAY -->
+<div class="overlay" id="turnView" hidden>
+  <div class="turn" id="turnBody"></div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------------- Data ----------------
+  var CATS = [
+    { id: "things",  name: "Things",   color: "var(--c-things)",  hex: "#f2b134" },
+    { id: "nature",  name: "Nature",   color: "var(--c-nature)",  hex: "#3fae6e" },
+    { id: "actions", name: "Actions",  color: "var(--c-actions)", hex: "#ec5a41" },
+    { id: "places",  name: "Places",   color: "var(--c-places)",  hex: "#3d82dc" },
+    { id: "people",  name: "People",   color: "var(--c-people)",  hex: "#b062d4" },
+    { id: "wild",    name: "Wildcard", color: "var(--c-wild)",    hex: "#e9e4d6" }
+  ];
+  var WORDS = {
+    things: ["Umbrella","Toaster","Paperclip","Saxophone","Trampoline","Wheelbarrow","Stapler","Hammock","Binoculars","Chandelier","Skateboard","Teapot","Compass","Padlock","Microwave","Sunglasses","Accordion","Backpack","Calculator","Candle","Doorbell","Fire extinguisher","Hairbrush","Harmonica","Helmet","Jigsaw puzzle","Kettle","Ladder","Lawnmower","Magnifying glass","Mirror","Paintbrush","Parachute","Pillow","Piano","Remote control","Rolling pin","Sandpaper","Scissors","Screwdriver","Sock","Spatula","Sponge","Stethoscope","Suitcase","Telescope","Thermometer","Toothbrush","Traffic cone","Typewriter","Violin","Wallet","Whistle","Zip","Kite","Hourglass","Snow globe","Coat hanger","Lunchbox","Trophy","Crayon","Bubble wrap","Shopping trolley","Tin opener","Wheelchair","Fridge magnet","Bunk bed","Cuckoo clock","Fishing rod","Tea towel"],
+    nature: ["Volcano","Glacier","Rainbow","Tornado","Hedgehog","Octopus","Sunflower","Waterfall","Cactus","Avalanche","Beehive","Butterfly","Coral reef","Crocodile","Daisy","Desert","Dolphin","Eclipse","Flamingo","Fog","Giraffe","Hailstone","Hurricane","Iceberg","Jellyfish","Kangaroo","Lightning","Lobster","Meteor","Moss","Mushroom","Oak tree","Owl","Panda","Peacock","Penguin","Pine cone","Puddle","Rhinoceros","River","Sloth","Snail","Snowflake","Spider web","Squirrel","Starfish","Swamp","Thunder","Tide","Tulip","Venus flytrap","Walrus","Woodpecker","Earthquake","Cave","Seaweed","Acorn","Frost","Full moon","Geyser","Quicksand","Chameleon","Hummingbird","Badger","Bamboo","Dandelion","Shooting star","Rock pool","Tadpole","Wasp nest"],
+    actions: ["Juggling","Sneezing","Whispering","Skydiving","Knitting","Yawning","Hiccupping","Sunbathing","Tiptoeing","Gargling","Ironing","Moonwalking","Arm wrestling","Applauding","Baking","Blinking","Bowling","Brushing teeth","Camping","Cartwheeling","Climbing","Crawling","Dancing","Digging","Diving","Dreaming","Fishing","Flossing","Gardening","Giggling","Hitchhiking","Hopping","Hugging","Kayaking","Kneeling","Limping","Meditating","Napping","Painting","Parallel parking","Proposing","Rowing","Sailing","Saluting","Shivering","Shopping","Shrugging","Singing","Ice skating","Snoring","Stretching","Surfing","Swimming","Texting","Tickling","Vacuuming","Waving","Winking","Wrapping a present","High-fiving","Sledging","Bungee jumping","Haggling","Sleepwalking","Eavesdropping","Daydreaming","Apologising","Queueing","Sharpening a pencil","Skipping"],
+    places: ["Paris","Egypt","Mount Everest","Antarctica","Tokyo","Hollywood","Amazon rainforest","Sahara Desert","Venice","Australia","Grand Canyon","New York","London","Rome","Brazil","Canada","China","India","Iceland","Ireland","Jamaica","Japan","Kenya","Mexico","Moscow","Niagara Falls","Norway","Scotland","Spain","Hawaii","Las Vegas","Stonehenge","The Moon","Mars","North Pole","Pacific Ocean","Dead Sea","The Alps","Great Wall of China","Taj Mahal","Statue of Liberty","Buckingham Palace","Athens","Amsterdam","Berlin","Dubai","Hong Kong","Istanbul","Madagascar","Mount Kilimanjaro","River Nile","Texas","Wales","Greenland","Atlantis","Sydney Opera House","Alaska","Bermuda Triangle","The Arctic","Switzerland","Transylvania","Silicon Valley","Times Square","Galapagos Islands","Loch Ness","The Vatican","Machu Picchu","Bollywood"],
+    people: ["Albert Einstein","Cleopatra","William Shakespeare","Napoleon","Elvis Presley","Marilyn Monroe","Leonardo da Vinci","Mozart","Beethoven","Charles Darwin","Isaac Newton","Abraham Lincoln","Queen Victoria","Henry VIII","Julius Caesar","Neil Armstrong","Martin Luther King","Nelson Mandela","Gandhi","Pablo Picasso","Vincent van Gogh","Frida Kahlo","Michael Jackson","Freddie Mercury","Beyoncé","Taylor Swift","Lionel Messi","Serena Williams","Usain Bolt","Muhammad Ali","Charlie Chaplin","Walt Disney","Marie Curie","Florence Nightingale","Joan of Arc","Robin Hood","King Arthur","Sherlock Holmes","Santa Claus","Cinderella","Dracula","Frankenstein","Peter Pan","Tarzan","Robinson Crusoe","Hercules","Zeus","Medusa","Christopher Columbus","Amelia Earhart","Steve Jobs","Oprah Winfrey","David Attenborough","Elton John","Dolly Parton","Bob Marley","Galileo","Harry Houdini","Sigmund Freud","Winston Churchill","Alice in Wonderland","The Tooth Fairy","Snow White","Pinocchio","Mona Lisa","Tutankhamun","Genghis Khan","Coco Chanel"],
+    wild: ["Spaghetti","Birthday party","Wi-fi","Homework","Déjà vu","Traffic jam","Karaoke","Pyjamas","Sushi","Fireworks","Hide and seek","Sandcastle","Time travel","Gravity","Alphabet","Chess","Popcorn","Rollercoaster","Rush hour","Haunted house","Treasure map","Superhero","Dinosaur","Robot","Ghost","Vampire","Unicorn","Mermaid","Pirate ship","The Olympics","Christmas","Halloween","Valentine's Day","New Year's Eve","Jet lag","Breakfast in bed","Selfie","Password","Emoji","Podcast","Cheeseburger","Chocolate","Peanut butter","Brain freeze","First date","Snowball fight","Pillow fight","Wedding cake","Bucket list","Lottery","Magic trick","Small talk","Monday morning","Group chat","Fancy dress","Sandwich","Bedtime story","Lost luggage","Spoiler alert","Fortune cookie"]
+  };
+
+  var TEAM_COLORS = ["#ff6b8b", "#38d6e0", "#c8f04a", "#ff9f2e", "#f4efe3", "#8c7bff"];
+  var DEFAULT_NAMES = ["The Blurters", "Word Nerds", "Quick Lips", "Loud Mouths", "Chatterboxes", "Smooth Talkers"];
+
+  // ---------------- State ----------------
+  var state = null;           // the game in progress
+  var setup = { teams: DEFAULT_NAMES.slice(0, 2), time: 30, spaces: 37 };
+  var turn = null;            // the active turn (not persisted mid-turn)
+  var soundOn = true;
+  var timerHandle = null;
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+
+  function catAt(pos) { return pos === 0 ? CATS[5] : CATS[(pos - 1) % 6]; }
+
+  function save() {
+    try { if (state) localStorage.setItem("chatterwheel.game", JSON.stringify(state)); else localStorage.removeItem("chatterwheel.game"); } catch (e) {}
+  }
+  function loadSaved() {
+    try { var s = localStorage.getItem("chatterwheel.game"); return s ? JSON.parse(s) : null; } catch (e) { return null; }
+  }
+
+  // Each category keeps its own shuffled deck so words do not repeat until it runs out.
+  function draw(catId) {
+    var pool = catId === "wild" ? null : WORDS[catId];
+    var deck = state.decks[catId];
+    if (!deck || !deck.length) {
+      if (pool) deck = shuffle(pool.slice());
+      else {
+        // Wildcard: its own list plus a sprinkle of every other category
+        var mix = WORDS.wild.slice();
+        ["things", "nature", "actions", "places", "people"].forEach(function (k) { mix = mix.concat(shuffle(WORDS[k].slice()).slice(0, 12)); });
+        deck = shuffle(mix);
+      }
+      state.decks[catId] = deck;
+    }
+    return deck.pop();
+  }
+
+  // ---------------- Sound ----------------
+  var actx = null;
+  function beep(freq, dur, type, vol) {
+    if (!soundOn) return;
+    try {
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      var o = actx.createOscillator(), g = actx.createGain();
+      o.type = type || "sine"; o.frequency.value = freq;
+      g.gain.value = vol || 0.15;
+      g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + dur);
+      o.connect(g); g.connect(actx.destination);
+      o.start(); o.stop(actx.currentTime + dur);
+    } catch (e) {}
+  }
+
+  // ---------------- Logo ----------------
+  $("topTools").previousElementSibling.querySelector(".logo").innerHTML =
+    "Chatterwheel".split("").map(function (ch) { return "<span>" + ch + "</span>"; }).join("");
+
+  // ---------------- Setup view ----------------
+  function renderSetup() {
+    $("teamList").innerHTML = setup.teams.map(function (n, i) {
+      return '<div class="team-row">' +
+        '<span class="swatch" style="background:' + TEAM_COLORS[i] + '"></span>' +
+        '<input id="team-' + i + '" maxlength="24" aria-label="Team ' + (i + 1) + ' name" value="' + esc(n) + '">' +
+        '<button class="icon-btn" type="button" data-rm="' + i + '" aria-label="Remove team ' + (i + 1) + '"' + (setup.teams.length <= 2 ? " disabled" : "") + '>×</button>' +
+        "</div>";
+    }).join("");
+    $("btnAddTeam").disabled = setup.teams.length >= 6;
+    [].forEach.call($("segTime").children, function (b) { b.setAttribute("aria-pressed", String(+b.dataset.v === setup.time)); });
+    [].forEach.call($("segLaps").children, function (b) { b.setAttribute("aria-pressed", String(+b.dataset.v === setup.spaces)); });
+    var saved = loadSaved();
+    $("btnResume").hidden = !(saved && !saved.winner);
+  }
+  $("teamList").addEventListener("input", function (e) {
+    var m = e.target.id && e.target.id.match(/^team-(\d+)$/);
+    if (m) setup.teams[+m[1]] = e.target.value;
+  });
+  $("teamList").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-rm]");
+    if (b && setup.teams.length > 2) { setup.teams.splice(+b.dataset.rm, 1); renderSetup(); }
+  });
+  $("btnAddTeam").addEventListener("click", function () {
+    if (setup.teams.length < 6) {
+      var used = setup.teams;
+      var name = DEFAULT_NAMES.filter(function (n) { return used.indexOf(n) < 0; })[0] || ("Team " + (used.length + 1));
+      setup.teams.push(name); renderSetup();
+    }
+  });
+  $("segTime").addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) { setup.time = +b.dataset.v; renderSetup(); } });
+  $("segLaps").addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) { setup.spaces = +b.dataset.v; renderSetup(); } });
+
+  $("catKey").innerHTML = CATS.map(function (c) { return '<span class="chip" style="background:' + c.color + '">' + c.name + "</span>"; }).join("");
+
+  $("btnStart").addEventListener("click", function () {
+    state = {
+      teams: setup.teams.map(function (n, i) { return { name: (n || "").trim() || ("Team " + (i + 1)), color: TEAM_COLORS[i], pos: 0 }; }),
+      current: 0, time: setup.time, spaces: setup.spaces, decks: {}, winner: null, round: 1
+    };
+    beep(660, 0.12);
+    save(); showGame();
+  });
+  $("btnResume").addEventListener("click", function () { var s = loadSaved(); if (s) { state = s; showGame(); } });
+
+  // ---------------- Board ----------------
+  function polar(r, deg) { var a = deg * Math.PI / 180; return [200 + r * Math.cos(a), 200 + r * Math.sin(a)]; }
+  function renderBoard() {
+    var N = state.spaces, R1 = 192, R0 = 112, step = 360 / N, out = [];
+    out.push('<circle cx="200" cy="200" r="198" fill="#0c1b1f"/>');
+    for (var i = 0; i < N; i++) {
+      var a0 = -90 + i * step - step / 2, a1 = a0 + step;
+      var p1 = polar(R1, a0), p2 = polar(R1, a1), p3 = polar(R0, a1), p4 = polar(R0, a0);
+      var cat = catAt(i), fill = i === 0 ? "#fffaf0" : cat.hex;
+      out.push('<path d="M' + p1 + " A" + R1 + "," + R1 + " 0 0 1 " + p2 + " L" + p3 + " A" + R0 + "," + R0 + " 0 0 0 " + p4 +
+        'Z" fill="' + fill + '" stroke="#0c1b1f" stroke-width="1.6"/>');
+      var mid = -90 + i * step, lp = polar((R0 + R1) / 2 + 2, mid);
+      var rot = mid;
+      var flip = (mid > 90 && mid < 270) ? 180 : 0;
+      var label = i === 0 ? "START" : cat.name.toUpperCase();
+      out.push('<text x="' + lp[0] + '" y="' + lp[1] + '" transform="rotate(' + (rot + flip) + " " + lp[0] + " " + lp[1] + ')" ' +
+        'text-anchor="middle" dominant-baseline="central" font-family="Figtree, sans-serif" font-weight="800" font-size="' + (N > 40 ? 8 : 9.5) +
+        '" letter-spacing=".6" fill="#161616" opacity="' + (i === 0 ? 1 : 0.78) + '">' + label + "</text>");
+    }
+    // centre hub
+    var t = state.teams[state.current], c = catAt(t.pos);
+    out.push('<circle cx="200" cy="200" r="' + (R0 - 6) + '" fill="#183139" stroke="#2a4851" stroke-width="3"/>');
+    out.push('<circle cx="200" cy="200" r="' + (R0 - 22) + '" fill="none" stroke="' + c.hex + '" stroke-width="5" stroke-dasharray="4 7" opacity=".9"/>');
+    out.push('<text x="200" y="178" text-anchor="middle" font-family="Figtree, sans-serif" font-size="10" font-weight="800" letter-spacing="1.6" fill="#9fb6b9">' +
+      (state.winner ? "WINNER" : "ROUND " + state.round) + "</text>");
+    out.push('<text x="200" y="204" text-anchor="middle" font-family="Bowlby One, Arial Black, sans-serif" font-size="' + (t.name.length > 12 ? 13 : 17) + '" fill="' + t.color + '">' + esc(t.name) + "</text>");
+    out.push('<text x="200" y="228" text-anchor="middle" font-family="Figtree, sans-serif" font-size="12" font-weight="800" fill="' + c.hex + '">' + (state.winner ? "" : c.name.toUpperCase()) + "</text>");
+    // tokens
+    var byPos = {};
+    state.teams.forEach(function (tm, idx) { (byPos[tm.pos % N] = byPos[tm.pos % N] || []).push(idx); });
+    Object.keys(byPos).forEach(function (p) {
+      var list = byPos[p], n = list.length;
+      list.forEach(function (idx, k) {
+        var tm = state.teams[idx];
+        var r = n === 1 ? (R0 + R1) / 2 : R0 + 14 + k * ((R1 - R0 - 28) / Math.max(1, n - 1));
+        var xy = polar(r, -90 + (+p) * step);
+        var active = idx === state.current && !state.winner;
+        out.push('<g class="tok"><circle cx="' + xy[0] + '" cy="' + xy[1] + '" r="' + (active ? 10 : 8) + '" fill="' + tm.color + '" stroke="#0c1b1f" stroke-width="3"/>' +
+          (active ? '<circle cx="' + xy[0] + '" cy="' + xy[1] + '" r="14" fill="none" stroke="#fffaf0" stroke-width="2"/>' : "") + "</g>");
+      });
+    });
+    $("board").innerHTML = out.join("");
+  }
+
+  function renderSide() {
+    var t = state.teams[state.current], c = catAt(t.pos);
+    $("upWho").textContent = t.name;
+    $("upWho").style.color = t.color;
+    $("upCat").textContent = c.name;
+    $("upCat").style.background = c.color;
+    var order = state.teams.map(function (tm, i) { return i; }).sort(function (a, b) { return state.teams[b].pos - state.teams[a].pos; });
+    $("scoreList").innerHTML = order.map(function (i) {
+      var tm = state.teams[i], left = Math.max(0, state.spaces - tm.pos);
+      return '<div class="score-row' + (i === state.current ? " active" : "") + '">' +
+        '<span class="dot" style="background:' + tm.color + '"></span>' +
+        '<span class="nm">' + esc(tm.name) + "</span>" +
+        '<span class="pos">' + (left === 0 ? "Home!" : left + " to go") + "</span></div>";
+    }).join("");
+  }
+
+  function showGame() {
+    $("setupView").hidden = true;
+    $("gameView").hidden = false;
+    $("topTools").hidden = false;
+    renderBoard(); renderSide();
+    if (state.winner) showWin();
+  }
+
+  $("btnNew").addEventListener("click", function () {
+    if (turn) return;
+    // two-tap confirm built into the button itself
+    var b = $("btnNew");
+    if (b.dataset.confirm) {
+      state = null; save(); stopTimer(); $("turnView").hidden = true;
+      $("gameView").hidden = true; $("topTools").hidden = true; $("setupView").hidden = false;
+      b.textContent = "New game"; delete b.dataset.confirm; renderSetup();
+    } else {
+      b.dataset.confirm = "1"; b.textContent = "Tap again to quit";
+      setTimeout(function () { if (b.dataset.confirm) { delete b.dataset.confirm; b.textContent = "New game"; } }, 3000);
+    }
+  });
+  $("btnSound").addEventListener("click", function () { soundOn = !soundOn; $("btnSound").textContent = "Sound: " + (soundOn ? "on" : "off"); });
+
+  // ---------------- Turn ----------------
+  var wakeLock = null;
+  function holdScreen() { try { if (navigator.wakeLock) navigator.wakeLock.request("screen").then(function (l) { wakeLock = l; }).catch(function () {}); } catch (e) {} }
+  function releaseScreen() { try { if (wakeLock) wakeLock.release(); } catch (e) {} wakeLock = null; }
+
+  $("btnGo").addEventListener("click", startCountdown);
+
+  function startCountdown() {
+    var t = state.teams[state.current], c = catAt(t.pos);
+    turn = { cat: c, words: [], current: null, endAt: 0, left: state.time, paused: false, phase: "ready" };
+    $("turnView").hidden = false;
+    $("turnBody").innerHTML =
+      '<span class="label">' + esc(t.name) + "</span>" +
+      '<span class="chip" style="background:' + c.color + ';font-size:16px;padding:6px 16px">' + c.name + "</span>" +
+      '<div class="card"><div class="band" style="background:' + c.color + '"></div>' +
+      '<div class="label" style="color:#555">Describer only</div>' +
+      '<div class="word" id="countNum">Ready?</div>' +
+      '<div style="color:#555">Your teammates can\'t see this. Don\'t say the word or any part of it.</div></div>' +
+      '<button class="btn big" id="btnBegin" type="button">Go!</button>' +
+      '<button class="btn ghost small" id="btnCancel" type="button">Back to board</button>';
+    $("btnBegin").focus();
+    $("btnCancel").onclick = function () { turn = null; $("turnView").hidden = true; };
+    $("btnBegin").onclick = function () {
+      $("btnBegin").disabled = true; $("btnCancel").hidden = true;
+      var n = 3;
+      (function tick() {
+        if (!turn) return;
+        if (n === 0) { beginTurn(); return; }
+        $("countNum").textContent = n; beep(520, 0.1); n--; setTimeout(tick, 650);
+      })();
+    };
+  }
+
+  function beginTurn() {
+    holdScreen();
+    turn.phase = "play";
+    turn.endAt = performance.now() + state.time * 1000;
+    var c = turn.cat, circ = 2 * Math.PI * 52;
+    $("turnBody").innerHTML =
+      '<div class="timer" id="timer"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="none" stroke="#2a4851" stroke-width="10"/>' +
+      '<circle id="timerArc" cx="60" cy="60" r="52" fill="none" stroke="' + c.hex + '" stroke-width="10" stroke-linecap="round" stroke-dasharray="' + circ + '" stroke-dashoffset="0"/></svg>' +
+      '<div class="num" id="timerNum">' + state.time + "</div></div>" +
+      '<div class="card" id="card"><div class="band" style="background:' + c.color + '"></div>' +
+      '<div class="label" style="color:#555">' + c.name + '</div><div class="word" id="word"></div></div>' +
+      '<div class="actions"><button class="btn bad" id="btnPass" type="button">Pass</button><button class="btn good" id="btnGot" type="button">Got it</button></div>' +
+      '<div class="tally"><span>Got <b id="nGot">0</b></span><span>Passed <b id="nPass">0</b></span></div>' +
+      '<div class="row" style="justify-content:center"><button class="btn ghost small" id="btnPause" type="button">Pause</button></div>' +
+      '<div class="hint">Keyboard: Space or Enter = Got it, P = Pass</div>';
+    // keyboard presses are handled by the keydown listener; ignore their synthetic clicks
+    $("btnGot").onclick = function (e) { if (e.detail !== 0) answer(true); };
+    $("btnPass").onclick = function (e) { if (e.detail !== 0) answer(false); };
+    $("btnPause").onclick = togglePause;
+    nextWord();
+    runTimer(circ);
+  }
+
+  function nextWord() {
+    turn.current = draw(turn.cat.id);
+    var card = $("card"), w = $("word");
+    w.textContent = turn.current;
+    card.classList.remove("flip"); void card.offsetWidth; card.classList.add("flip");
+    save();
+  }
+
+  function answer(ok) {
+    if (!turn || turn.phase !== "play" || turn.paused) return;
+    turn.words.push({ w: turn.current, ok: ok });
+    beep(ok ? 880 : 300, ok ? 0.12 : 0.15, ok ? "triangle" : "sine");
+    $("nGot").textContent = turn.words.filter(function (x) { return x.ok; }).length;
+    $("nPass").textContent = turn.words.filter(function (x) { return !x.ok; }).length;
+    nextWord();
+  }
+
+  function togglePause() {
+    if (!turn || turn.phase !== "play") return;
+    if (turn.paused) {
+      turn.paused = false; turn.endAt = performance.now() + turn.left * 1000;
+      $("btnPause").textContent = "Pause"; $("word").style.visibility = "";
+      $("btnGot").disabled = $("btnPass").disabled = false;
+    } else {
+      turn.paused = true; turn.left = Math.max(0, (turn.endAt - performance.now()) / 1000);
+      $("btnPause").textContent = "Resume"; $("word").style.visibility = "hidden";
+      $("btnGot").disabled = $("btnPass").disabled = true;
+    }
+  }
+
+  function stopTimer() { if (timerHandle) cancelAnimationFrame(timerHandle); timerHandle = null; }
+  function runTimer(circ) {
+    var lastSec = state.time;
+    stopTimer();
+    (function frame() {
+      if (!turn || turn.phase !== "play") return;
+      var left = turn.paused ? turn.left : Math.max(0, (turn.endAt - performance.now()) / 1000);
+      var sec = Math.ceil(left);
+      $("timerNum").textContent = sec;
+      $("timerArc").setAttribute("stroke-dashoffset", String(circ * (1 - left / state.time)));
+      $("timer").classList.toggle("hurry", sec <= 5);
+      if (!turn.paused && sec !== lastSec) { if (sec <= 5 && sec > 0) beep(1000, 0.05, "square", 0.08); lastSec = sec; }
+      if (left <= 0) { timeUp(); return; }
+      timerHandle = requestAnimationFrame(frame);
+    })();
+  }
+
+  function timeUp() {
+    stopTimer(); releaseScreen();
+    beep(180, 0.6, "sawtooth", 0.18);
+    turn.phase = "review";
+    // The word on screen when time ran out goes on the list unticked; tick it if it was guessed in time.
+    if (turn.current) turn.words.push({ w: turn.current, ok: false, last: true });
+    renderReview();
+  }
+
+  function renderReview() {
+    var t = state.teams[state.current];
+    var got = turn.words.filter(function (x) { return x.ok; }).length;
+    $("turnBody").innerHTML =
+      '<span class="label">Time\'s up</span>' +
+      '<h2 style="margin:0">' + esc(t.name) + " moves " + got + " space" + (got === 1 ? "" : "s") + "</h2>" +
+      '<p class="hint" style="margin:0">Tap a word to fix it: untick words where the describer slipped up, or tick the last word if it was shouted in time.</p>' +
+      '<ul class="review-list" id="reviewList">' + (turn.words.length ? turn.words.map(function (x, i) {
+        return '<li><span class="w">' + esc(x.w) + (x.last ? ' <span class="hint">(on screen at the buzzer)</span>' : "") + "</span>" +
+          '<button type="button" data-i="' + i + '" class="' + (x.ok ? "ok" : "no") + '">' + (x.ok ? "Got it" : "Not counted") + "</button></li>";
+      }).join("") : '<li><span class="w">No words this time.</span></li>') + "</ul>" +
+      '<button class="btn big" id="btnMove" type="button">' + (got ? "Move " + got + " and pass the phone" : "Pass the phone") + "</button>";
+    $("reviewList").onclick = function (e) {
+      var b = e.target.closest("[data-i]"); if (!b) return;
+      var w = turn.words[+b.dataset.i]; w.ok = !w.ok; renderReview();
+    };
+    $("btnMove").onclick = function () { finishTurn(got); };
+  }
+
+  function finishTurn(steps) {
+    $("turnView").hidden = true;
+    var t = state.teams[state.current];
+    turn = null;
+    var target = Math.min(state.spaces, t.pos + steps);
+    $("btnGo").disabled = true;
+    (function stepOnce() {
+      if (t.pos < target) {
+        t.pos++; beep(440 + t.pos * 6, 0.05, "triangle", 0.08);
+        renderBoard(); renderSide();
+        setTimeout(stepOnce, 230);
+        return;
+      }
+      if (t.pos >= state.spaces) {
+        state.winner = state.current; save(); renderBoard(); renderSide(); showWin(); return;
+      }
+      state.current = (state.current + 1) % state.teams.length;
+      if (state.current === 0) state.round++;
+      $("btnGo").disabled = false;
+      save(); renderBoard(); renderSide();
+    })();
+  }
+
+  function showWin() {
+    var t = state.teams[state.winner];
+    $("turnView").hidden = false;
+    $("turnBody").innerHTML =
+      '<span class="label">Round ' + state.round + "</span>" +
+      '<p class="win-title" style="color:' + t.color + '">' + esc(t.name) + "</p>" +
+      '<h2 style="margin:0">talked their way all the way round. They win!</h2>' +
+      '<div class="row" style="justify-content:center">' +
+      '<button class="btn big" id="btnAgain" type="button">Play again, same teams</button>' +
+      '<button class="btn ghost" id="btnSetup" type="button">Change teams</button></div>';
+    [523, 659, 784, 1047].forEach(function (f, i) { setTimeout(function () { beep(f, 0.18, "triangle"); }, i * 140); });
+    $("btnAgain").onclick = function () {
+      state.teams.forEach(function (tm) { tm.pos = 0; });
+      state.current = 0; state.winner = null; state.round = 1;
+      $("turnView").hidden = true; save(); renderBoard(); renderSide(); $("btnGo").disabled = false;
+    };
+    $("btnSetup").onclick = function () {
+      setup.teams = state.teams.map(function (tm) { return tm.name; });
+      state = null; save(); $("turnView").hidden = true;
+      $("gameView").hidden = true; $("topTools").hidden = true; $("setupView").hidden = false; renderSetup();
+    };
+  }
+
+  document.addEventListener("keydown", function (e) {
+    if (!turn || turn.phase !== "play") return;
+    if (e.target && e.target.tagName === "BUTTON" && (e.key === " " || e.key === "Enter")) e.preventDefault();
+    if (e.key === " " || e.key === "Enter") { e.preventDefault(); answer(true); }
+    else if (e.key === "p" || e.key === "P" || e.key === "ArrowRight") answer(false);
+  });
+
+  // ---------------- Boot ----------------
+  renderSetup();
+  var saved = loadSaved();
+  if (saved && !saved.winner && saved.teams) { state = saved; showGame(); }
+})();
+</script>
+</body>
+</html>
