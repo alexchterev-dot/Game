@@ -102,7 +102,7 @@ h2 { font-family: var(--f-display); font-weight: 400; font-size: 22px; margin: 0
 
 /* ---------- Game ---------- */
 .game { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 20px; align-items: start; }
-@media (max-width: 820px) { .game { grid-template-columns: 1fr; } }
+@media (max-width: 820px) { .game { grid-template-columns: 1fr; } .board-wrap { max-width: min(560px, 74vw); } }
 .board-wrap { position: relative; width: 100%; max-width: 560px; margin: 0 auto; aspect-ratio: 1; }
 .board-wrap svg { width: 100%; height: 100%; display: block; }
 .side { display: grid; gap: 16px; }
@@ -152,6 +152,36 @@ h2 { font-family: var(--f-display); font-weight: 400; font-size: 22px; margin: 0
 
 .win-title { font-family: var(--f-display); font-size: clamp(34px, 9vw, 60px); line-height: 1; margin: 0; overflow-wrap: anywhere; }
 
+/* ---------- Mode + online ---------- */
+.mode-pick { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 560px) { .mode-pick { grid-template-columns: 1fr; } }
+.mode-pick button {
+  text-align: left; border: 2px solid var(--rail); background: var(--felt-2); border-radius: 16px; padding: 14px 16px;
+  display: grid; gap: 2px;
+}
+.mode-pick button b { font-family: var(--f-display); font-weight: 400; font-size: 18px; letter-spacing: .3px; }
+.mode-pick button span { color: var(--muted); font-size: 14px; }
+.mode-pick button[aria-pressed="true"] { border-color: var(--chalk); background: #21404a; }
+.text-input {
+  width: 100%; min-width: 0; padding: 10px 12px; border-radius: 10px; border: 2px solid var(--rail);
+  background: var(--felt); color: var(--ink); font: inherit; font-weight: 600;
+}
+.notice { border-radius: 12px; padding: 12px 14px; background: rgba(255,122,102,.12); border: 1px solid rgba(255,122,102,.45); font-size: 14px; }
+.notice.calm { background: rgba(159,182,185,.1); border-color: var(--rail); color: var(--muted); }
+.games { display: grid; gap: 10px; }
+.game-card { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; padding: 12px 14px; border-radius: 12px; background: var(--felt); border: 2px solid var(--rail); }
+.game-card .gc-title { font-weight: 800; overflow-wrap: anywhere; }
+.game-card .gc-sub { color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+.code { font-family: var(--f-display); letter-spacing: 3px; font-size: 26px; line-height: 1; }
+.live { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; font-variant-numeric: tabular-nums; }
+.live .big { font-family: var(--f-display); font-size: 40px; line-height: 1; }
+.spect-words { display: flex; flex-wrap: wrap; gap: 6px; }
+.spect-words span { padding: 3px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; background: var(--felt); border: 1px solid var(--rail); }
+.spect-words span.ok { background: var(--good); color: #0b2516; border-color: transparent; }
+.score-row .who-tag { color: var(--muted); font-size: 12px; font-weight: 600; margin-left: 6px; }
+.guessers { display: grid; gap: 10px; width: 100%; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+.guessers .btn { padding: 16px 10px; font-size: 17px; overflow-wrap: anywhere; }
+
 @media (prefers-reduced-motion: reduce) {
   .card.flip { animation: none; }
   .btn { transition: none; }
@@ -162,56 +192,95 @@ h2 { font-family: var(--f-display); font-weight: 400; font-size: 22px; margin: 0
 <div class="wrap">
   <header class="top">
     <div>
-      <h1 class="logo" aria-label="Chatterwheel"></h1>
-      <p class="tag">The fast-talking describe-it party game. One phone, two to six teams.</p>
+      <h1 class="logo" id="logo" aria-label="Chatterwheel"></h1>
+      <p class="tag">The fast-talking describe-it party game.</p>
     </div>
     <div class="toolbar" id="topTools" hidden>
       <button class="btn ghost small" id="btnSound" type="button">Sound: on</button>
-      <button class="btn ghost small" id="btnNew" type="button">New game</button>
+      <button class="btn ghost small" id="btnNew" type="button">Leave game</button>
     </div>
   </header>
 
   <!-- SETUP -->
-  <section id="setupView" class="setup">
-    <div class="panel">
-      <h2>Teams</h2>
-      <div class="teams" id="teamList"></div>
-      <div class="row" style="margin-top:12px">
-        <button class="btn ghost small" id="btnAddTeam" type="button">Add a team</button>
-      </div>
-      <div class="field" style="margin-top:20px">
-        <span class="label">Seconds per turn</span>
-        <div class="seg" id="segTime" role="group" aria-label="Seconds per turn">
-          <button type="button" data-v="30">30</button>
-          <button type="button" data-v="45">45</button>
-          <button type="button" data-v="60">60</button>
-        </div>
-      </div>
-      <div class="field" style="margin-top:16px">
-        <span class="label">Board length</span>
-        <div class="seg" id="segLaps" role="group" aria-label="Board length">
-          <button type="button" data-v="25">Quick · 24</button>
-          <button type="button" data-v="37">Classic · 36</button>
-          <button type="button" data-v="49">Long · 48</button>
-        </div>
-      </div>
-      <div class="row" style="margin-top:22px">
-        <button class="btn big" id="btnStart" type="button">Start the game</button>
-        <button class="btn ghost" id="btnResume" type="button" hidden>Resume last game</button>
-      </div>
+  <section id="setupView" class="wrap" style="gap:20px">
+    <div class="mode-pick" role="group" aria-label="How are you playing?">
+      <button type="button" id="modeOnline"><b>Everyone on their own phone</b><span>Each player plays for themselves. One person hosts, the rest join.</span></button>
+      <button type="button" id="modeLocal"><b>One shared phone</b><span>Play in teams and pass a single phone round the table.</span></button>
     </div>
-    <div class="panel rules">
-      <h2>How to play</h2>
-      <ol>
-        <li>Each team picks a <b>describer</b> for the turn. Everyone else on the team guesses.</li>
-        <li>The describer gets words from the category of the space their team is standing on.</li>
-        <li>Describe without saying the word, any part of it, or "rhymes with". No acting it out.</li>
-        <li>Tap <b>Got it</b> when your team shouts the answer, or <b>Pass</b> to skip. Passing costs nothing but time.</li>
-        <li>When the timer runs out, check the list and move one space for every word guessed.</li>
-        <li>First team round the wheel and back to the start wins.</li>
-      </ol>
-      <div class="cat-key" id="catKey"></div>
-      <p>Wildcard spaces mix words from every category, plus some odd extras. Rotate the describer each turn.</p>
+
+    <div class="setup">
+      <!-- online -->
+      <div class="panel" id="onlinePanel">
+        <h2>Play on separate phones</h2>
+        <div class="field">
+          <label class="label" for="nick">Your name</label>
+          <input class="text-input" id="nick" maxlength="20" placeholder="e.g. Sam" autocomplete="nickname">
+        </div>
+        <div id="netStatus" class="notice calm" style="margin-top:14px">Connecting…</div>
+        <div id="onlineBody" hidden>
+          <div class="field" style="margin-top:18px">
+            <span class="label">Games open right now</span>
+            <div class="games" id="gameList"></div>
+          </div>
+          <div class="field" style="margin-top:22px">
+            <span class="label">Or host a new game</span>
+            <div class="row">
+              <div class="seg" id="segTimeOn" role="group" aria-label="Seconds per turn">
+                <button type="button" data-v="30">30s</button><button type="button" data-v="45">45s</button><button type="button" data-v="60">60s</button>
+              </div>
+              <div class="seg" id="segLapsOn" role="group" aria-label="Board length">
+                <button type="button" data-v="25">24</button><button type="button" data-v="37">36</button><button type="button" data-v="49">48</button>
+              </div>
+            </div>
+            <div class="row"><button class="btn big" id="btnHost" type="button">Host a game</button></div>
+          </div>
+          <div class="row" style="margin-top:14px"><button class="btn ghost small" id="btnRejoin" type="button" hidden>Rejoin your last game</button></div>
+        </div>
+      </div>
+
+      <!-- local -->
+      <div class="panel" id="localPanel" hidden>
+        <h2>Teams</h2>
+        <div class="teams" id="teamList"></div>
+        <div class="row" style="margin-top:12px"><button class="btn ghost small" id="btnAddTeam" type="button">Add a team</button></div>
+        <div class="field" style="margin-top:20px">
+          <span class="label">Seconds per turn</span>
+          <div class="seg" id="segTime" role="group" aria-label="Seconds per turn">
+            <button type="button" data-v="30">30</button><button type="button" data-v="45">45</button><button type="button" data-v="60">60</button>
+          </div>
+        </div>
+        <div class="field" style="margin-top:16px">
+          <span class="label">Board length</span>
+          <div class="seg" id="segLaps" role="group" aria-label="Board length">
+            <button type="button" data-v="25">Quick · 24</button><button type="button" data-v="37">Classic · 36</button><button type="button" data-v="49">Long · 48</button>
+          </div>
+        </div>
+        <div class="row" style="margin-top:22px">
+          <button class="btn big" id="btnStart" type="button">Start the game</button>
+          <button class="btn ghost" id="btnResume" type="button" hidden>Resume last game</button>
+        </div>
+      </div>
+
+      <div class="panel rules">
+        <h2>How to play</h2>
+        <ol id="rulesOnline">
+          <li>Everyone opens this page on their own phone. One person taps <b>Host a game</b>, the others tap <b>Join</b>.</li>
+          <li>On your turn, your phone shows words from the category of the space you're standing on.</li>
+          <li>Describe them without saying the word, any part of it, or "rhymes with". The other players shout guesses.</li>
+          <li>Tap the name of whoever guessed right. <b>You and the guesser each move one space</b>, so it pays to listen.</li>
+          <li>When time's up, check the list. First player round the wheel and back to the start wins.</li>
+        </ol>
+        <ol id="rulesLocal" hidden>
+          <li>Each team picks a <b>describer</b> for the turn. Everyone else on the team guesses.</li>
+          <li>The describer gets words from the category of the space their team is standing on.</li>
+          <li>Describe without saying the word, any part of it, or "rhymes with". No acting it out.</li>
+          <li>Tap <b>Got it</b> when your team shouts the answer, or <b>Pass</b> to skip.</li>
+          <li>When the timer runs out, check the list and move one space for every word guessed.</li>
+          <li>First team round the wheel and back to the start wins.</li>
+        </ol>
+        <div class="cat-key" id="catKey"></div>
+        <p>Wildcard spaces mix words from every category, plus some odd extras.</p>
+      </div>
     </div>
   </section>
 
@@ -219,15 +288,26 @@ h2 { font-family: var(--f-display); font-weight: 400; font-size: 22px; margin: 0
   <section id="gameView" class="game" hidden>
     <div class="board-wrap"><svg id="board" viewBox="0 0 400 400" role="img" aria-label="Game board"></svg></div>
     <div class="side">
+      <div class="panel" id="roomPanel" hidden>
+        <div class="row" style="justify-content:space-between">
+          <div><div class="label">Game code</div><div class="code" id="roomCode"></div></div>
+          <div class="hint" id="roomWho" style="text-align:right"></div>
+        </div>
+        <div id="hostGone" class="notice" style="margin-top:12px" hidden>
+          The host's phone has dropped out.
+          <div class="row" style="margin-top:8px"><button class="btn small" id="btnTakeover" type="button">Host from this phone</button></div>
+        </div>
+      </div>
       <div class="panel up-next">
-        <span class="label">Up next</span>
+        <span class="label" id="upLabel">Up next</span>
         <div class="who" id="upWho"></div>
-        <div class="row"><span class="label">Category</span><span class="chip" id="upCat"></span></div>
-        <p class="hint" id="upHint" style="margin:0">Hand the phone to this team's describer. Only they look at the screen.</p>
-        <div class="row"><button class="btn big" id="btnGo" type="button">Start turn</button></div>
+        <div class="row" id="upCatRow"><span class="label">Category</span><span class="chip" id="upCat"></span></div>
+        <div id="upLive" hidden></div>
+        <p class="hint" id="upHint" style="margin:0"></p>
+        <div class="row" id="upActions"></div>
       </div>
       <div class="panel">
-        <h2>Standings</h2>
+        <h2 id="standTitle">Standings</h2>
         <div class="score" id="scoreList"></div>
       </div>
     </div>
@@ -243,7 +323,7 @@ h2 { font-family: var(--f-display); font-weight: 400; font-size: 22px; margin: 0
 (function () {
   "use strict";
 
-  // ---------------- Data ----------------
+  // ================= Data =================
   var CATS = [
     { id: "things",  name: "Things",   color: "var(--c-things)",  hex: "#f2b134" },
     { id: "nature",  name: "Nature",   color: "var(--c-nature)",  hex: "#3fae6e" },
@@ -260,382 +340,703 @@ h2 { font-family: var(--f-display); font-weight: 400; font-size: 22px; margin: 0
     people: ["Albert Einstein","Cleopatra","William Shakespeare","Napoleon","Elvis Presley","Marilyn Monroe","Leonardo da Vinci","Mozart","Beethoven","Charles Darwin","Isaac Newton","Abraham Lincoln","Queen Victoria","Henry VIII","Julius Caesar","Neil Armstrong","Martin Luther King","Nelson Mandela","Gandhi","Pablo Picasso","Vincent van Gogh","Frida Kahlo","Michael Jackson","Freddie Mercury","Beyoncé","Taylor Swift","Lionel Messi","Serena Williams","Usain Bolt","Muhammad Ali","Charlie Chaplin","Walt Disney","Marie Curie","Florence Nightingale","Joan of Arc","Robin Hood","King Arthur","Sherlock Holmes","Santa Claus","Cinderella","Dracula","Frankenstein","Peter Pan","Tarzan","Robinson Crusoe","Hercules","Zeus","Medusa","Christopher Columbus","Amelia Earhart","Steve Jobs","Oprah Winfrey","David Attenborough","Elton John","Dolly Parton","Bob Marley","Galileo","Harry Houdini","Sigmund Freud","Winston Churchill","Alice in Wonderland","The Tooth Fairy","Snow White","Pinocchio","Mona Lisa","Tutankhamun","Genghis Khan","Coco Chanel"],
     wild: ["Spaghetti","Birthday party","Wi-fi","Homework","Déjà vu","Traffic jam","Karaoke","Pyjamas","Sushi","Fireworks","Hide and seek","Sandcastle","Time travel","Gravity","Alphabet","Chess","Popcorn","Rollercoaster","Rush hour","Haunted house","Treasure map","Superhero","Dinosaur","Robot","Ghost","Vampire","Unicorn","Mermaid","Pirate ship","The Olympics","Christmas","Halloween","Valentine's Day","New Year's Eve","Jet lag","Breakfast in bed","Selfie","Password","Emoji","Podcast","Cheeseburger","Chocolate","Peanut butter","Brain freeze","First date","Snowball fight","Pillow fight","Wedding cake","Bucket list","Lottery","Magic trick","Small talk","Monday morning","Group chat","Fancy dress","Sandwich","Bedtime story","Lost luggage","Spoiler alert","Fortune cookie"]
   };
+  var COLORS = ["#ff6b8b", "#38d6e0", "#c8f04a", "#ff9f2e", "#f4efe3", "#8c7bff"];
+  var DEFAULT_TEAMS = ["The Blurters", "Word Nerds", "Quick Lips", "Loud Mouths", "Chatterboxes", "Smooth Talkers"];
+  var MAX_PLAYERS = 6;
 
-  var TEAM_COLORS = ["#ff6b8b", "#38d6e0", "#c8f04a", "#ff9f2e", "#f4efe3", "#8c7bff"];
-  var DEFAULT_NAMES = ["The Blurters", "Word Nerds", "Quick Lips", "Loud Mouths", "Chatterboxes", "Smooth Talkers"];
-
-  // ---------------- State ----------------
-  var state = null;           // the game in progress
-  var setup = { teams: DEFAULT_NAMES.slice(0, 2), time: 30, spaces: 37 };
-  var turn = null;            // the active turn (not persisted mid-turn)
-  var soundOn = true;
-  var timerHandle = null;
-
+  // ================= Helpers =================
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
-  function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function int(n, lo, hi) { n = Math.floor(Number(n)); return isFinite(n) ? Math.max(lo, Math.min(hi, n)) : lo; }
+  function str(s, max) { return typeof s === "string" ? s.slice(0, max || 40) : ""; }
+  function store(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function load(k) { try { var s = localStorage.getItem(k); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
+  function rid(n, abc) { abc = abc || "abcdefghjkmnpqrstuvwxyz23456789"; var s = ""; for (var i = 0; i < n; i++) s += abc[Math.floor(Math.random() * abc.length)]; return s; }
 
+  function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; var t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  function sshuffle(a, r) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(r() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  var deckCache = {};
+  // Every phone builds the same deck from the game's seed, so words never repeat across phones.
+  function deckFor(catId, seed) {
+    var key = catId + ":" + seed;
+    if (deckCache[key]) return deckCache[key];
+    var base = catId.length * 7919 + seed;
+    var d;
+    if (catId === "wild") {
+      d = WORDS.wild.slice();
+      ["things", "nature", "actions", "places", "people"].forEach(function (k, i) { d = d.concat(sshuffle(WORDS[k].slice(), rng(base + i + 1)).slice(0, 12)); });
+      d = sshuffle(d, rng(base));
+    } else d = sshuffle(WORDS[catId].slice(), rng(base));
+    return (deckCache[key] = d);
+  }
   function catAt(pos) { return pos === 0 ? CATS[5] : CATS[(pos - 1) % 6]; }
 
-  function save() {
-    try { if (state) localStorage.setItem("chatterwheel.game", JSON.stringify(state)); else localStorage.removeItem("chatterwheel.game"); } catch (e) {}
-  }
-  function loadSaved() {
-    try { var s = localStorage.getItem("chatterwheel.game"); return s ? JSON.parse(s) : null; } catch (e) { return null; }
-  }
-
-  // Each category keeps its own shuffled deck so words do not repeat until it runs out.
-  function draw(catId) {
-    var pool = catId === "wild" ? null : WORDS[catId];
-    var deck = state.decks[catId];
-    if (!deck || !deck.length) {
-      if (pool) deck = shuffle(pool.slice());
-      else {
-        // Wildcard: its own list plus a sprinkle of every other category
-        var mix = WORDS.wild.slice();
-        ["things", "nature", "actions", "places", "people"].forEach(function (k) { mix = mix.concat(shuffle(WORDS[k].slice()).slice(0, 12)); });
-        deck = shuffle(mix);
-      }
-      state.decks[catId] = deck;
-    }
-    return deck.pop();
-  }
-
-  // ---------------- Sound ----------------
-  var actx = null;
+  // ================= Sound + screen =================
+  var soundOn = true, actx = null;
   function beep(freq, dur, type, vol) {
     if (!soundOn) return;
     try {
       actx = actx || new (window.AudioContext || window.webkitAudioContext)();
       var o = actx.createOscillator(), g = actx.createGain();
-      o.type = type || "sine"; o.frequency.value = freq;
-      g.gain.value = vol || 0.15;
+      o.type = type || "sine"; o.frequency.value = freq; g.gain.value = vol || 0.15;
       g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + dur);
-      o.connect(g); g.connect(actx.destination);
-      o.start(); o.stop(actx.currentTime + dur);
+      o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime + dur);
     } catch (e) {}
   }
+  var wakeLock = null;
+  function holdScreen() { try { if (navigator.wakeLock && !wakeLock) navigator.wakeLock.request("screen").then(function (l) { wakeLock = l; l.addEventListener && l.addEventListener("release", function () { wakeLock = null; }); }).catch(function () {}); } catch (e) {} }
 
-  // ---------------- Logo ----------------
-  $("topTools").previousElementSibling.querySelector(".logo").innerHTML =
-    "Chatterwheel".split("").map(function (ch) { return "<span>" + ch + "</span>"; }).join("");
+  // ================= State =================
+  // mode: "local" (one phone, teams) or "online" (one phone each, every player for themselves)
+  var mode = load("chatterwheel.mode") === "local" ? "local" : "online";
+  var localSetup = { teams: DEFAULT_TEAMS.slice(0, 2), time: 30, spaces: 37 };
+  var onlineSetup = { time: 45, spaces: 37 };
+  // one id per browser tab, kept across reloads of that tab
+  var pid = (function () { try { var v = sessionStorage.getItem("chatterwheel.pid"); if (!v) { v = rid(10); sessionStorage.setItem("chatterwheel.pid", v); } return v; } catch (e) { return rid(10); } })();
+  var nick = load("chatterwheel.nick") || "";
 
-  // ---------------- Setup view ----------------
-  function renderSetup() {
-    $("teamList").innerHTML = setup.teams.map(function (n, i) {
-      return '<div class="team-row">' +
-        '<span class="swatch" style="background:' + TEAM_COLORS[i] + '"></span>' +
-        '<input id="team-' + i + '" maxlength="24" aria-label="Team ' + (i + 1) + ' name" value="' + esc(n) + '">' +
-        '<button class="icon-btn" type="button" data-rm="' + i + '" aria-label="Remove team ' + (i + 1) + '"' + (setup.teams.length <= 2 ? " disabled" : "") + '>×</button>' +
-        "</div>";
-    }).join("");
-    $("btnAddTeam").disabled = setup.teams.length >= 6;
-    [].forEach.call($("segTime").children, function (b) { b.setAttribute("aria-pressed", String(+b.dataset.v === setup.time)); });
-    [].forEach.call($("segLaps").children, function (b) { b.setAttribute("aria-pressed", String(+b.dataset.v === setup.spaces)); });
-    var saved = loadSaved();
-    $("btnResume").hidden = !(saved && !saved.winner);
+  var game = null;        // the authoritative game (host/local) or the host's latest copy (online guest)
+  var inGame = false;
+  var isHost = false;     // this phone runs the rules (always true in local mode)
+  var myPeer = null;      // this tab's room label ("local" in local mode)
+  var myPres = {};        // what this phone has told the room
+  var lobby = null, gameRoom = null, roomState = "connecting";
+  var hostSeenAt = 0;
+  var dt = null;          // my describing turn, when it's me at the mic
+  var disp = [];          // positions as drawn (tokens walk towards the real ones)
+  var dismissedWin = -1;
+
+  function me() { if (!game) return -1; for (var i = 0; i < game.teams.length; i++) if (game.teams[i].pid === pid) return i; return -1; }
+
+  function newGame(teams, time, spaces, code) {
+    return { code: code || null, phase: code ? "lobby" : "play", teams: teams, time: time, spaces: spaces,
+      current: 0, round: 1, winner: null, turnId: 1, turn: null, seed: Math.floor(Math.random() * 1e9), used: {}, seq: 0 };
   }
-  $("teamList").addEventListener("input", function (e) {
-    var m = e.target.id && e.target.id.match(/^team-(\d+)$/);
-    if (m) setup.teams[+m[1]] = e.target.value;
-  });
-  $("teamList").addEventListener("click", function (e) {
-    var b = e.target.closest("[data-rm]");
-    if (b && setup.teams.length > 2) { setup.teams.splice(+b.dataset.rm, 1); renderSetup(); }
-  });
-  $("btnAddTeam").addEventListener("click", function () {
-    if (setup.teams.length < 6) {
-      var used = setup.teams;
-      var name = DEFAULT_NAMES.filter(function (n) { return used.indexOf(n) < 0; })[0] || ("Team " + (used.length + 1));
-      setup.teams.push(name); renderSetup();
-    }
-  });
-  $("segTime").addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) { setup.time = +b.dataset.v; renderSetup(); } });
-  $("segLaps").addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) { setup.spaces = +b.dataset.v; renderSetup(); } });
 
-  $("catKey").innerHTML = CATS.map(function (c) { return '<span class="chip" style="background:' + c.color + '">' + c.name + "</span>"; }).join("");
-
-  $("btnStart").addEventListener("click", function () {
-    state = {
-      teams: setup.teams.map(function (n, i) { return { name: (n || "").trim() || ("Team " + (i + 1)), color: TEAM_COLORS[i], pos: 0 }; }),
-      current: 0, time: setup.time, spaces: setup.spaces, decks: {}, winner: null, round: 1
+  // Check a game that arrived from another phone before trusting it.
+  function cleanGame(g) {
+    if (!g || typeof g !== "object" || !Array.isArray(g.teams) || g.teams.length > MAX_PLAYERS) return null;
+    var spaces = int(g.spaces, 13, 61);
+    var out = {
+      code: str(g.code, 8), phase: g.phase === "lobby" ? "lobby" : "play", time: int(g.time, 10, 120), spaces: spaces,
+      teams: g.teams.map(function (t) { return { name: str(t && t.name, 24) || "Player", pid: str(t && t.pid, 16), pos: int(t && t.pos, 0, spaces) }; }),
+      current: 0, round: int(g.round, 1, 999), winner: g.winner == null ? null : int(g.winner, 0, 5), turnId: int(g.turnId, 0, 1e9),
+      seed: int(g.seed, 0, 1e9), used: {}, seq: int(g.seq, 0, 1e12), turn: null
     };
-    beep(660, 0.12);
-    save(); showGame();
-  });
-  $("btnResume").addEventListener("click", function () { var s = loadSaved(); if (s) { state = s; showGame(); } });
+    out.current = out.teams.length ? int(g.current, 0, out.teams.length - 1) : 0;
+    if (out.winner != null && out.winner >= out.teams.length) out.winner = null;
+    CATS.forEach(function (c) { out.used[c.id] = int(g.used && g.used[c.id], 0, 1e6); });
+    var t = g.turn;
+    if (t && typeof t === "object") {
+      out.turn = { id: int(t.id, 0, 1e9), peer: str(t.peer, 64), phase: ["ready", "play", "review"].indexOf(t.phase) >= 0 ? t.phase : "ready",
+        got: int(t.got, 0, 99), passed: int(t.passed, 0, 99), left: int(t.left, 0, 120), paused: !!t.paused,
+        words: Array.isArray(t.words) ? t.words.slice(0, 40).map(function (w) { return { w: str(w && w.w, 40), by: w && w.by ? str(w.by, 16) : null }; }) : null };
+    }
+    return out;
+  }
 
-  // ---------------- Board ----------------
+  // ================= The rules (host phone only) =================
+  // Every phone describes itself in its presence; the host folds those into the game.
+  function presList() {
+    if (mode === "local") return [{ peer: "local", presence: myPres }];
+    var list = gameRoom ? gameRoom.peers().map(function (p) { return { peer: p.peer, presence: p.sameTab ? myPres : (p.presence || {}), isMe: p.sameTab }; }) : [];
+    if (!list.some(function (p) { return p.isMe; }) && myPeer) list.push({ peer: myPeer, presence: myPres, isMe: true });
+    return list;
+  }
+
+  function advance(g) {
+    g.turnId++; g.turn = null;
+    g.current = (g.current + 1) % g.teams.length;
+    if (g.current === 0) g.round++;
+  }
+
+  function reduce() {
+    if (!isHost || !game) return;
+    var g = game, before = JSON.stringify(g), peers = presList(), byPeer = {};
+    peers.forEach(function (p) { byPeer[p.peer] = p.presence || {}; });
+
+    if (mode === "online") {
+      // players join by being in the room
+      peers.forEach(function (p) {
+        var pr = p.presence; if (!pr || !pr.pid || !pr.nick) return;
+        var id = str(pr.pid, 16), name = str(pr.nick, 20).trim() || "Player";
+        var found = g.teams.filter(function (t) { return t.pid === id; })[0];
+        if (found) { if (found.name !== name) found.name = name; }
+        else if (g.teams.length < MAX_PLAYERS && g.winner == null) g.teams.push({ name: name, pid: id, pos: 0 });
+      });
+      if (g.phase === "lobby") {
+        // before the start, people who close the page drop off the list
+        var here = {}; peers.forEach(function (p) { if (p.presence && p.presence.pid) here[p.presence.pid] = 1; });
+        g.teams = g.teams.filter(function (t) { return here[t.pid]; });
+        if (g.current >= g.teams.length) g.current = 0;
+      }
+    }
+
+    // the describer's phone went away: put the turn back
+    if (g.turn && !byPeer[g.turn.peer]) g.turn = null;
+
+    if (!g.turn && g.winner == null && g.phase === "play" && g.teams.length) {
+      var want = g.teams[g.current];
+      peers.some(function (p) {
+        var c = p.presence && p.presence.claim;
+        if (!c || int(c.id, 0, 1e9) !== g.turnId) return false;
+        if (mode === "online" && p.presence.pid !== want.pid) return false;
+        g.turn = { id: g.turnId, peer: p.peer, phase: "ready", got: 0, passed: 0, left: g.time, paused: false, words: null };
+        return true;
+      });
+    }
+
+    if (g.turn) {
+      var pr = byPeer[g.turn.peer] || {}, t = pr.turn, d = pr.done;
+      if (d && int(d.id, 0, 1e9) === g.turn.id && Array.isArray(d.words)) {
+        applyDone(g, d);
+      } else {
+        if (g.turn.phase === "ready" && (!pr.claim || int(pr.claim.id, 0, 1e9) !== g.turn.id)) g.turn = null;
+        else if (t && int(t.id, 0, 1e9) === g.turn.id) {
+          g.turn.phase = ["play", "review"].indexOf(t.phase) >= 0 ? t.phase : g.turn.phase;
+          g.turn.got = int(t.got, 0, 99); g.turn.passed = int(t.passed, 0, 99);
+          g.turn.left = int(t.left, 0, 120); g.turn.paused = !!t.paused;
+          g.turn.words = Array.isArray(t.words) ? t.words.slice(0, 40).map(function (w) { return { w: str(w && w.w, 40), by: w && w.by ? str(w.by, 16) : null }; }) : null;
+        }
+      }
+    }
+    if (JSON.stringify(g) !== before) publish();
+  }
+
+  function applyDone(g, d) {
+    var cur = g.teams[g.current], cat = catAt(cur.pos);
+    var moves = g.teams.map(function () { return 0; });
+    d.words.slice(0, 40).forEach(function (w) {
+      if (!w || !w.by) return;
+      moves[g.current]++;
+      if (mode === "online") g.teams.forEach(function (t, i) { if (i !== g.current && t.pid === w.by) moves[i]++; });
+    });
+    g.used[cat.id] = (g.used[cat.id] || 0) + int(d.drawn, 0, 60);
+    g.teams.forEach(function (t, i) { t.pos = Math.min(g.spaces, t.pos + moves[i]); });
+    // describer gets first claim on the win, then whoever is furthest
+    var winners = g.teams.map(function (t, i) { return i; }).filter(function (i) { return g.teams[i].pos >= g.spaces; });
+    if (winners.length) { g.winner = winners.indexOf(g.current) >= 0 ? g.current : winners[0]; g.turnId++; g.turn = null; }
+    else advance(g);
+  }
+
+  function publish() {
+    game.seq++;
+    if (mode === "local") { store("chatterwheel.game", game); render(); return; }
+    myPres.role = "host"; myPres.game = game;
+    if (gameRoom) gameRoom.presence({ role: "host", game: game }).catch(function () {});
+    if (lobby) lobby.presence({ hosting: { code: game.code, names: game.teams.map(function (t) { return t.name; }).slice(0, 6), round: game.round, phase: game.phase, n: game.teams.length } }).catch(function () {});
+    store("chatterwheel.online", { code: game.code, host: true, game: game });
+    render();
+  }
+
+  // Tell the host (or, in local mode, the rules engine right here) what this phone is doing.
+  function act(patch) {
+    Object.keys(patch).forEach(function (k) { if (patch[k] === null) delete myPres[k]; else myPres[k] = patch[k]; });
+    if (mode === "online" && gameRoom) gameRoom.presence(patch).catch(function () {});
+    if (isHost) reduce(); else render();
+  }
+
+  // ================= Room (online) =================
+  function initRoom() {
+    var c = window.claude;
+    if (!c || typeof c.use !== "function") { roomState = "none"; renderSetup(); return; }
+    c.use("room").then(function (r) {
+      if (!r) { roomState = "none"; renderSetup(); return; }
+      lobby = r; roomState = "ok";
+      r.onPeers(function () { renderSetup(); }, function () { lobby = null; roomState = "none"; renderSetup(); });
+      renderSetup();
+    }).catch(function () { roomState = "none"; renderSetup(); });
+  }
+
+  function joinGame(code, hostGame) {
+    if (!lobby) return;
+    nick = ($("nick").value || "").trim().slice(0, 20);
+    if (!nick) { $("nick").focus(); $("netStatus").className = "notice"; $("netStatus").textContent = "Type your name first so the others know who you are."; $("netStatus").hidden = false; return; }
+    store("chatterwheel.nick", nick);
+    $("netStatus").className = "notice calm"; $("netStatus").textContent = "Joining game " + code.toUpperCase() + "…";
+    lobby.join("cw-" + code).then(function (gr) {
+      gameRoom = gr; inGame = true; isHost = !!hostGame; game = hostGame ? hostGame : null; hostSeenAt = Date.now();
+      myPres = { pid: pid, nick: nick };
+      gr.onPeers(onGamePeers, function () { $("hostGone").hidden = true; leaveGame("The connection to the game was lost."); });
+      gr.presence({ pid: pid, nick: nick }).catch(function () {});
+      if (!isHost) store("chatterwheel.online", { code: code, host: false });
+      holdScreen();
+      showGameView();
+      if (isHost) { if (game.code !== code) game.code = code; reduce(); publish(); }
+      else render();
+    }).catch(function (e) {
+      $("netStatus").className = "notice";
+      $("netStatus").textContent = "Couldn't join that game" + (e && e.code === "limit_reached" ? ": too many rooms open right now. Try again in a moment." : ". Check your connection and try again.");
+    });
+  }
+
+  function onGamePeers(change) {
+    var mine = change.peers.filter(function (p) { return p.sameTab; })[0];
+    if (mine) myPeer = mine.peer;
+    // find the host: the highest seq wins, ties go to the lowest label
+    var best = null;
+    change.peers.forEach(function (p) {
+      if (p.sameTab || !p.presence || p.presence.role !== "host") return;
+      var g = cleanGame(p.presence.game);
+      if (!g || (gameRoom && g.code && ("cw-" + g.code) !== gameRoom.name)) return;
+      if (!best || g.seq > best.g.seq || (g.seq === best.g.seq && p.peer < best.peer)) best = { peer: p.peer, g: g };
+    });
+    if (isHost && best && game && (best.g.seq > game.seq || (best.g.seq === game.seq && best.peer < myPeer))) {
+      isHost = false; delete myPres.role; delete myPres.game;
+      gameRoom.presence({ role: null, game: null }).catch(function () {});
+      if (lobby) lobby.presence({ hosting: null }).catch(function () {});
+    }
+    if (isHost) { reduce(); render(); return; }
+    if (best) { game = best.g; hostSeenAt = Date.now(); store("chatterwheel.online", { code: game.code, host: false }); }
+    render();
+  }
+
+  function takeOver() {
+    if (!game || !gameRoom) return;
+    isHost = true; game.seq += 1;
+    reduce(); publish();
+  }
+
+  function leaveGame(msg) {
+    var gr = gameRoom; gameRoom = null;
+    if (gr) gr.leave().catch(function () {});
+    if (lobby && isHost) lobby.presence({ hosting: null }).catch(function () {});
+    inGame = false; isHost = false; game = null; dt = null; myPres = {}; myPeer = null;
+    closeOverlay(); showSetup();
+    if (msg) { $("netStatus").className = "notice"; $("netStatus").textContent = msg; }
+  }
+
+  // host-missing watcher
+  setInterval(function () {
+    if (mode !== "online" || !inGame) return;
+    var gone = !isHost && Date.now() - hostSeenAt > 5000;
+    if ($("hostGone").hidden === gone) { $("hostGone").hidden = !gone; $("btnTakeover").disabled = !game; }
+  }, 1000);
+
+  // ================= Setup screen =================
+  $("logo").innerHTML = "Chatterwheel".split("").map(function (ch) { return "<span>" + ch + "</span>"; }).join("");
+  $("catKey").innerHTML = CATS.map(function (c) { return '<span class="chip" style="background:' + c.color + '">' + c.name + "</span>"; }).join("");
+  $("nick").value = nick;
+
+  function pressSeg(el, v) { [].forEach.call(el.children, function (b) { b.setAttribute("aria-pressed", String(+b.dataset.v === v)); }); }
+
+  function renderSetup() {
+    $("modeOnline").setAttribute("aria-pressed", String(mode === "online"));
+    $("modeLocal").setAttribute("aria-pressed", String(mode === "local"));
+    $("onlinePanel").hidden = mode !== "online";
+    $("localPanel").hidden = mode !== "local";
+    $("rulesOnline").hidden = mode !== "online";
+    $("rulesLocal").hidden = mode !== "local";
+
+    // local
+    $("teamList").innerHTML = localSetup.teams.map(function (n, i) {
+      return '<div class="team-row"><span class="swatch" style="background:' + COLORS[i] + '"></span>' +
+        '<input id="team-' + i + '" maxlength="24" aria-label="Team ' + (i + 1) + ' name" value="' + esc(n) + '">' +
+        '<button class="icon-btn" type="button" data-rm="' + i + '" aria-label="Remove team ' + (i + 1) + '"' + (localSetup.teams.length <= 2 ? " disabled" : "") + ">×</button></div>";
+    }).join("");
+    $("btnAddTeam").disabled = localSetup.teams.length >= 6;
+    pressSeg($("segTime"), localSetup.time); pressSeg($("segLaps"), localSetup.spaces);
+    var saved = load("chatterwheel.game");
+    $("btnResume").hidden = !(saved && saved.winner == null && saved.teams);
+
+    // online
+    pressSeg($("segTimeOn"), onlineSetup.time); pressSeg($("segLapsOn"), onlineSetup.spaces);
+    if (inGame) return;
+    var st = $("netStatus");
+    if (roomState === "connecting") { st.hidden = false; st.className = "notice calm"; st.textContent = "Connecting…"; $("onlineBody").hidden = true; return; }
+    if (roomState === "none") {
+      st.hidden = false; st.className = "notice";
+      st.innerHTML = "This copy of the page can't reach other phones. To play on separate phones, open the game from its claude.ai link while signed in, and make sure the owner has shared it with each player. You can still play together on <b>one shared phone</b>.";
+      $("onlineBody").hidden = true; return;
+    }
+    if (st.className === "notice calm" && st.textContent === "Connecting…") st.hidden = true;
+    $("onlineBody").hidden = false;
+    var games = lobby.peers().filter(function (p) { return !p.sameTab && p.presence && p.presence.hosting && typeof p.presence.hosting.code === "string" && /^[a-z0-9]{4}$/.test(p.presence.hosting.code); });
+    $("gameList").innerHTML = games.length ? games.map(function (p) {
+      var h = p.presence.hosting, names = Array.isArray(h.names) ? h.names.slice(0, 6).map(function (n) { return str(n, 20); }) : [];
+      return '<div class="game-card"><div style="min-width:0"><div class="gc-title">Game ' + esc(h.code.toUpperCase()) + "</div>" +
+        '<div class="gc-sub">' + (names.length ? esc(names.join(", ")) : "Nobody yet") + " · " + (h.phase === "lobby" ? "waiting to start" : "round " + int(h.round, 1, 999)) + "</div></div>" +
+        '<button class="btn small" type="button" data-join="' + esc(h.code) + '">Join</button></div>';
+    }).join("") : '<div class="notice calm">No games open yet. If a friend is hosting, this list fills in by itself within a few seconds.</div>';
+    var last = load("chatterwheel.online");
+    $("btnRejoin").hidden = !(last && last.code);
+    if (last && last.code) $("btnRejoin").textContent = "Rejoin game " + String(last.code).toUpperCase();
+  }
+
+  $("modeOnline").onclick = function () { mode = "online"; store("chatterwheel.mode", mode); renderSetup(); };
+  $("modeLocal").onclick = function () { mode = "local"; store("chatterwheel.mode", mode); renderSetup(); };
+  $("teamList").addEventListener("input", function (e) { var m = e.target.id && e.target.id.match(/^team-(\d+)$/); if (m) localSetup.teams[+m[1]] = e.target.value; });
+  $("teamList").addEventListener("click", function (e) { var b = e.target.closest("[data-rm]"); if (b && localSetup.teams.length > 2) { localSetup.teams.splice(+b.dataset.rm, 1); renderSetup(); } });
+  $("btnAddTeam").onclick = function () {
+    if (localSetup.teams.length >= 6) return;
+    var n = DEFAULT_TEAMS.filter(function (x) { return localSetup.teams.indexOf(x) < 0; })[0] || "Team " + (localSetup.teams.length + 1);
+    localSetup.teams.push(n); renderSetup();
+  };
+  function segClick(el, fn) { el.addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) { fn(+b.dataset.v); renderSetup(); } }); }
+  segClick($("segTime"), function (v) { localSetup.time = v; });
+  segClick($("segLaps"), function (v) { localSetup.spaces = v; });
+  segClick($("segTimeOn"), function (v) { onlineSetup.time = v; });
+  segClick($("segLapsOn"), function (v) { onlineSetup.spaces = v; });
+  $("nick").addEventListener("input", function () { store("chatterwheel.nick", $("nick").value.trim().slice(0, 20)); });
+
+  $("btnStart").onclick = function () {
+    mode = "local"; isHost = true; myPeer = "local"; myPres = {};
+    game = newGame(localSetup.teams.map(function (n, i) { return { name: (n || "").trim() || "Team " + (i + 1), pid: "", pos: 0 }; }), localSetup.time, localSetup.spaces, null);
+    inGame = true; beep(660, 0.12); showGameView(); publish();
+  };
+  $("btnResume").onclick = function () {
+    var g = cleanGame(load("chatterwheel.game")); if (!g) return;
+    mode = "local"; isHost = true; myPeer = "local"; myPres = {}; game = g; inGame = true; showGameView(); render();
+  };
+  $("btnHost").onclick = function () { joinGame(rid(4, "abcdefghjkmnpqrstuvwxyz"), newGame([], onlineSetup.time, onlineSetup.spaces, "pending")); };
+  $("gameList").addEventListener("click", function (e) { var b = e.target.closest("[data-join]"); if (b) joinGame(b.dataset.join, null); });
+  $("btnRejoin").onclick = function () {
+    var last = load("chatterwheel.online"); if (!last || !last.code) return;
+    var g = last.host ? cleanGame(last.game) : null;
+    joinGame(last.code, g);
+  };
+  $("btnTakeover").onclick = takeOver;
+
+  // ================= Game screen =================
+  function showSetup() { $("setupView").hidden = false; $("gameView").hidden = true; $("topTools").hidden = true; renderSetup(); }
+  function showGameView() { $("setupView").hidden = true; $("gameView").hidden = false; $("topTools").hidden = false; $("btnNew").textContent = mode === "local" ? "New game" : "Leave game"; disp = []; }
+
   function polar(r, deg) { var a = deg * Math.PI / 180; return [200 + r * Math.cos(a), 200 + r * Math.sin(a)]; }
+
   function renderBoard() {
-    var N = state.spaces, R1 = 192, R0 = 112, step = 360 / N, out = [];
+    var g = game, N = g.spaces, R1 = 192, R0 = 112, step = 360 / N, out = [];
     out.push('<circle cx="200" cy="200" r="198" fill="#0c1b1f"/>');
     for (var i = 0; i < N; i++) {
       var a0 = -90 + i * step - step / 2, a1 = a0 + step;
       var p1 = polar(R1, a0), p2 = polar(R1, a1), p3 = polar(R0, a1), p4 = polar(R0, a0);
       var cat = catAt(i), fill = i === 0 ? "#fffaf0" : cat.hex;
-      out.push('<path d="M' + p1 + " A" + R1 + "," + R1 + " 0 0 1 " + p2 + " L" + p3 + " A" + R0 + "," + R0 + " 0 0 0 " + p4 +
-        'Z" fill="' + fill + '" stroke="#0c1b1f" stroke-width="1.6"/>');
-      var mid = -90 + i * step, lp = polar((R0 + R1) / 2 + 2, mid);
-      var rot = mid;
-      var flip = (mid > 90 && mid < 270) ? 180 : 0;
-      var label = i === 0 ? "START" : cat.name.toUpperCase();
-      out.push('<text x="' + lp[0] + '" y="' + lp[1] + '" transform="rotate(' + (rot + flip) + " " + lp[0] + " " + lp[1] + ')" ' +
-        'text-anchor="middle" dominant-baseline="central" font-family="Figtree, sans-serif" font-weight="800" font-size="' + (N > 40 ? 8 : 9.5) +
-        '" letter-spacing=".6" fill="#161616" opacity="' + (i === 0 ? 1 : 0.78) + '">' + label + "</text>");
+      out.push('<path d="M' + p1 + " A" + R1 + "," + R1 + " 0 0 1 " + p2 + " L" + p3 + " A" + R0 + "," + R0 + " 0 0 0 " + p4 + 'Z" fill="' + fill + '" stroke="#0c1b1f" stroke-width="1.6"/>');
+      var mid = -90 + i * step, lp = polar((R0 + R1) / 2 + 2, mid), flip = (mid > 90 && mid < 270) ? 180 : 0;
+      out.push('<text x="' + lp[0] + '" y="' + lp[1] + '" transform="rotate(' + (mid + flip) + " " + lp[0] + " " + lp[1] + ')" text-anchor="middle" dominant-baseline="central" font-family="Figtree, sans-serif" font-weight="800" font-size="' + (N > 40 ? 8 : 9.5) + '" letter-spacing=".6" fill="#161616" opacity="' + (i === 0 ? 1 : 0.78) + '">' + (i === 0 ? "START" : cat.name.toUpperCase()) + "</text>");
     }
-    // centre hub
-    var t = state.teams[state.current], c = catAt(t.pos);
     out.push('<circle cx="200" cy="200" r="' + (R0 - 6) + '" fill="#183139" stroke="#2a4851" stroke-width="3"/>');
-    out.push('<circle cx="200" cy="200" r="' + (R0 - 22) + '" fill="none" stroke="' + c.hex + '" stroke-width="5" stroke-dasharray="4 7" opacity=".9"/>');
-    out.push('<text x="200" y="178" text-anchor="middle" font-family="Figtree, sans-serif" font-size="10" font-weight="800" letter-spacing="1.6" fill="#9fb6b9">' +
-      (state.winner ? "WINNER" : "ROUND " + state.round) + "</text>");
-    out.push('<text x="200" y="204" text-anchor="middle" font-family="Bowlby One, Arial Black, sans-serif" font-size="' + (t.name.length > 12 ? 13 : 17) + '" fill="' + t.color + '">' + esc(t.name) + "</text>");
-    out.push('<text x="200" y="228" text-anchor="middle" font-family="Figtree, sans-serif" font-size="12" font-weight="800" fill="' + c.hex + '">' + (state.winner ? "" : c.name.toUpperCase()) + "</text>");
-    // tokens
+    if (g.teams.length) {
+      var ci = g.winner != null ? g.winner : g.current, t = g.teams[ci], c = catAt(t.pos);
+      out.push('<circle cx="200" cy="200" r="' + (R0 - 22) + '" fill="none" stroke="' + c.hex + '" stroke-width="5" stroke-dasharray="4 7" opacity=".9"/>');
+      out.push('<text x="200" y="178" text-anchor="middle" font-family="Figtree, sans-serif" font-size="10" font-weight="800" letter-spacing="1.6" fill="#9fb6b9">' + (g.winner != null ? "WINNER" : g.phase === "lobby" ? "WAITING" : "ROUND " + g.round) + "</text>");
+      out.push('<text x="200" y="204" text-anchor="middle" font-family="Bowlby One, Arial Black, sans-serif" font-size="' + (t.name.length > 12 ? 13 : 17) + '" fill="' + COLORS[ci] + '">' + esc(t.name) + "</text>");
+      if (g.winner == null && g.phase !== "lobby") out.push('<text x="200" y="228" text-anchor="middle" font-family="Figtree, sans-serif" font-size="12" font-weight="800" fill="' + c.hex + '">' + c.name.toUpperCase() + "</text>");
+    } else {
+      out.push('<text x="200" y="204" text-anchor="middle" font-family="Figtree, sans-serif" font-size="13" font-weight="800" fill="#9fb6b9">Waiting for players</text>');
+    }
     var byPos = {};
-    state.teams.forEach(function (tm, idx) { (byPos[tm.pos % N] = byPos[tm.pos % N] || []).push(idx); });
+    g.teams.forEach(function (tm, idx) { var p = (disp[idx] == null ? tm.pos : disp[idx]) % N; (byPos[p] = byPos[p] || []).push(idx); });
     Object.keys(byPos).forEach(function (p) {
       var list = byPos[p], n = list.length;
       list.forEach(function (idx, k) {
-        var tm = state.teams[idx];
         var r = n === 1 ? (R0 + R1) / 2 : R0 + 14 + k * ((R1 - R0 - 28) / Math.max(1, n - 1));
-        var xy = polar(r, -90 + (+p) * step);
-        var active = idx === state.current && !state.winner;
-        out.push('<g class="tok"><circle cx="' + xy[0] + '" cy="' + xy[1] + '" r="' + (active ? 10 : 8) + '" fill="' + tm.color + '" stroke="#0c1b1f" stroke-width="3"/>' +
-          (active ? '<circle cx="' + xy[0] + '" cy="' + xy[1] + '" r="14" fill="none" stroke="#fffaf0" stroke-width="2"/>' : "") + "</g>");
+        var xy = polar(r, -90 + (+p) * step), active = idx === g.current && g.winner == null && g.phase !== "lobby";
+        out.push('<circle cx="' + xy[0] + '" cy="' + xy[1] + '" r="' + (active ? 10 : 8) + '" fill="' + COLORS[idx] + '" stroke="#0c1b1f" stroke-width="3"/>' +
+          (active ? '<circle cx="' + xy[0] + '" cy="' + xy[1] + '" r="14" fill="none" stroke="#fffaf0" stroke-width="2"/>' : ""));
       });
     });
     $("board").innerHTML = out.join("");
   }
 
-  function renderSide() {
-    var t = state.teams[state.current], c = catAt(t.pos);
-    $("upWho").textContent = t.name;
-    $("upWho").style.color = t.color;
-    $("upCat").textContent = c.name;
-    $("upCat").style.background = c.color;
-    var order = state.teams.map(function (tm, i) { return i; }).sort(function (a, b) { return state.teams[b].pos - state.teams[a].pos; });
+  // tokens walk one space at a time towards where the game says they are
+  setInterval(function () {
+    if (!game || !inGame) return;
+    if (disp.length !== game.teams.length) { disp = game.teams.map(function (t) { return t.pos; }); renderBoard(); return; }
+    var moved = false;
+    game.teams.forEach(function (t, i) {
+      if (disp[i] < t.pos) { disp[i]++; moved = true; }
+      else if (disp[i] > t.pos) { disp[i] = t.pos; moved = true; }
+    });
+    if (moved) { beep(500, 0.04, "triangle", 0.06); renderBoard(); renderStandings(); }
+  }, 230);
+
+  function nameOfPid(p) { var t = game.teams.filter(function (x) { return x.pid === p; })[0]; return t ? t.name : "Someone"; }
+
+  function renderStandings() {
+    var g = game, myIdx = me();
+    $("standTitle").textContent = mode === "online" ? "Players" : "Standings";
+    if (!g.teams.length) { $("scoreList").innerHTML = '<p class="hint" style="margin:0">Players appear here as they join.</p>'; return; }
+    var order = g.teams.map(function (t, i) { return i; }).sort(function (a, b) { return g.teams[b].pos - g.teams[a].pos || a - b; });
     $("scoreList").innerHTML = order.map(function (i) {
-      var tm = state.teams[i], left = Math.max(0, state.spaces - tm.pos);
-      return '<div class="score-row' + (i === state.current ? " active" : "") + '">' +
-        '<span class="dot" style="background:' + tm.color + '"></span>' +
-        '<span class="nm">' + esc(tm.name) + "</span>" +
-        '<span class="pos">' + (left === 0 ? "Home!" : left + " to go") + "</span></div>";
+      var tm = g.teams[i], pos = disp[i] == null ? tm.pos : disp[i], left = Math.max(0, g.spaces - pos);
+      return '<div class="score-row' + (i === g.current && g.phase !== "lobby" ? " active" : "") + '"><span class="dot" style="background:' + COLORS[i] + '"></span>' +
+        '<span class="nm">' + esc(tm.name) + (mode === "online" && i === myIdx ? '<span class="who-tag">you</span>' : "") + "</span>" +
+        '<span class="pos">' + (g.phase === "lobby" ? "ready" : left === 0 ? "Home!" : left + " to go") + "</span></div>";
     }).join("");
   }
 
-  function showGame() {
-    $("setupView").hidden = true;
-    $("gameView").hidden = false;
-    $("topTools").hidden = false;
-    renderBoard(); renderSide();
-    if (state.winner) showWin();
-  }
-
-  $("btnNew").addEventListener("click", function () {
-    if (turn) return;
-    // two-tap confirm built into the button itself
-    var b = $("btnNew");
-    if (b.dataset.confirm) {
-      state = null; save(); stopTimer(); $("turnView").hidden = true;
-      $("gameView").hidden = true; $("topTools").hidden = true; $("setupView").hidden = false;
-      b.textContent = "New game"; delete b.dataset.confirm; renderSetup();
-    } else {
-      b.dataset.confirm = "1"; b.textContent = "Tap again to quit";
-      setTimeout(function () { if (b.dataset.confirm) { delete b.dataset.confirm; b.textContent = "New game"; } }, 3000);
+  function render() {
+    if (!inGame) return;
+    if (!game) {
+      $("roomPanel").hidden = false; $("roomCode").textContent = gameRoom ? gameRoom.name.replace(/^cw-/, "").toUpperCase() : "";
+      $("upWho").textContent = "Finding the host…"; $("upWho").style.color = ""; $("upCat").textContent = ""; $("upCatRow").hidden = true;
+      $("upLive").hidden = true; $("upHint").textContent = "Hang on while this phone catches up with the game."; $("upActions").innerHTML = "";
+      $("board").innerHTML = ""; $("scoreList").innerHTML = ""; return;
     }
-  });
-  $("btnSound").addEventListener("click", function () { soundOn = !soundOn; $("btnSound").textContent = "Sound: " + (soundOn ? "on" : "off"); });
+    var g = game, online = mode === "online", myIdx = me();
+    renderBoard(); renderStandings();
 
-  // ---------------- Turn ----------------
-  var wakeLock = null;
-  function holdScreen() { try { if (navigator.wakeLock) navigator.wakeLock.request("screen").then(function (l) { wakeLock = l; }).catch(function () {}); } catch (e) {} }
-  function releaseScreen() { try { if (wakeLock) wakeLock.release(); } catch (e) {} wakeLock = null; }
+    // room panel
+    $("roomPanel").hidden = !online;
+    if (online) {
+      $("roomCode").textContent = (g.code || "").toUpperCase();
+      $("roomWho").innerHTML = myIdx >= 0 ? "You're playing as<br><b>" + esc(g.teams[myIdx].name) + "</b>" + (isHost ? "<br>and hosting" : "") : (isHost ? "You're hosting" : "Joining…");
+    }
 
-  $("btnGo").addEventListener("click", startCountdown);
+    // up next panel
+    var actions = [], hint = "", label = "Up next", live = "";
+    $("upCatRow").hidden = false;
+    if (online && g.phase === "lobby") {
+      label = "Waiting room";
+      $("upWho").textContent = g.teams.length + (g.teams.length === 1 ? " player" : " players") + " in";
+      $("upWho").style.color = "";
+      $("upCatRow").hidden = true;
+      hint = isHost ? "Friends join from the same page on their phones: they'll see game " + esc((g.code || "").toUpperCase()) + " in the list. Start when everyone's in." : "Waiting for the host to start the game.";
+      if (isHost) actions.push('<button class="btn big" id="btnBegin0" type="button"' + (g.teams.length < 2 ? " disabled" : "") + ">Start the game</button>");
+    } else if (g.teams.length) {
+      var cur = g.teams[g.current], c = catAt(cur.pos), t = g.turn;
+      $("upWho").textContent = cur.name; $("upWho").style.color = COLORS[g.current];
+      $("upCat").textContent = c.name; $("upCat").style.background = c.color;
+      var mine = online ? myIdx === g.current : true;
+      if (g.winner != null) { label = "Game over"; hint = esc(g.teams[g.winner].name) + " won."; if (isHost) actions.push('<button class="btn" id="btnAgainSide" type="button">Play again</button>'); }
+      else if (!t) {
+        if (mine) {
+          hint = online ? "It's your turn to describe. The others guess, and whoever gets it moves with you." : "Hand the phone to this team's describer. Only they look at the screen.";
+          actions.push('<button class="btn big" id="btnGo" type="button">' + (online ? "Start my turn" : "Start turn") + "</button>");
+        } else hint = "Waiting for " + esc(cur.name) + " to start their turn.";
+        if (online && isHost && !mine) actions.push('<button class="btn ghost small" id="btnSkip" type="button">Skip their turn</button>');
+      } else {
+        label = t.phase === "review" ? "Checking the words" : "Describing now";
+        if (t.phase === "ready") hint = esc(cur.name) + " is getting ready…";
+        else if (t.phase === "play") {
+          hint = online && !mine ? "Shout your guesses! The first right answer moves you and " + esc(cur.name) + " one space." : "";
+          live = '<div class="live"><span class="big">' + (t.paused ? "Paused" : t.left) + "</span><span>Got <b>" + t.got + "</b></span><span>Passed <b>" + t.passed + "</b></span></div>";
+        } else {
+          hint = esc(cur.name) + " is checking the list.";
+          if (t.words) live = '<div class="spect-words">' + t.words.map(function (w) { return '<span class="' + (w.by ? "ok" : "") + '">' + esc(w.w) + (w.by && online ? " · " + esc(nameOfPid(w.by)) : "") + "</span>"; }).join("") + "</div>";
+        }
+      }
+    }
+    $("upLabel").textContent = label;
+    $("upHint").innerHTML = hint; $("upHint").hidden = !hint;
+    $("upLive").innerHTML = live; $("upLive").hidden = !live;
+    $("upActions").innerHTML = actions.join("");
+    if ($("btnGo")) $("btnGo").onclick = function () { beep(660, 0.08); act({ claim: { id: g.turnId } }); };
+    if ($("btnSkip")) $("btnSkip").onclick = function () { advance(game); publish(); };
+    if ($("btnBegin0")) $("btnBegin0").onclick = function () { if (game.teams.length >= 2) { game.phase = "play"; beep(660, 0.12); publish(); } };
+    if ($("btnAgainSide")) $("btnAgainSide").onclick = playAgain;
 
-  function startCountdown() {
-    var t = state.teams[state.current], c = catAt(t.pos);
-    turn = { cat: c, words: [], current: null, endAt: 0, left: state.time, paused: false, phase: "ready" };
-    $("turnView").hidden = false;
+    // describer overlay follows the game
+    var t2 = g.turn;
+    if (t2 && t2.peer === myPeer && !dt && g.winner == null) startDescriber(t2.id);
+    if (dt && (!t2 || t2.id !== dt.id || t2.peer !== myPeer)) { dt = null; closeOverlay(); }
+    if (dt && dt.phase === "review") renderReview(true);
+
+    // win
+    if (g.winner != null && dismissedWin !== g.seq && !dt) showWin();
+    else if (g.winner == null && $("turnBody").dataset.kind === "win") closeOverlay();
+
+    if (online && t2 && t2.phase === "review" && lastPhase === "play") beep(180, 0.5, "sawtooth", 0.14);
+    lastPhase = t2 ? t2.phase : null;
+  }
+  var lastPhase = null;
+
+  // ================= Describer =================
+  function closeOverlay() { $("turnView").hidden = true; $("turnBody").innerHTML = ""; $("turnBody").dataset.kind = ""; stopTimer(); }
+
+  function startDescriber(id) {
+    var cur = game.teams[game.current], c = catAt(cur.pos);
+    dt = { id: id, cat: c, phase: "ready", words: [], drawn: 0, deckStart: game.used[c.id] || 0, endAt: 0, left: game.time, paused: false, current: null };
+    $("turnView").hidden = false; $("turnBody").dataset.kind = "turn";
     $("turnBody").innerHTML =
-      '<span class="label">' + esc(t.name) + "</span>" +
+      '<span class="label">' + esc(cur.name) + "</span>" +
       '<span class="chip" style="background:' + c.color + ';font-size:16px;padding:6px 16px">' + c.name + "</span>" +
-      '<div class="card"><div class="band" style="background:' + c.color + '"></div>' +
-      '<div class="label" style="color:#555">Describer only</div>' +
-      '<div class="word" id="countNum">Ready?</div>' +
-      '<div style="color:#555">Your teammates can\'t see this. Don\'t say the word or any part of it.</div></div>' +
-      '<button class="btn big" id="btnBegin" type="button">Go!</button>' +
-      '<button class="btn ghost small" id="btnCancel" type="button">Back to board</button>';
+      '<div class="card"><div class="band" style="background:' + c.color + '"></div><div class="label" style="color:#555">Describer only</div>' +
+      '<div class="word" id="countNum">Ready?</div><div style="color:#555">Keep this screen to yourself. Don\'t say the word or any part of it.</div></div>' +
+      '<button class="btn big" id="btnBegin" type="button">Go!</button><button class="btn ghost small" id="btnCancel" type="button">Not yet</button>';
     $("btnBegin").focus();
-    $("btnCancel").onclick = function () { turn = null; $("turnView").hidden = true; };
+    $("btnCancel").onclick = function () { var d = dt; dt = null; closeOverlay(); if (d) act({ claim: null }); };
     $("btnBegin").onclick = function () {
-      $("btnBegin").disabled = true; $("btnCancel").hidden = true;
-      var n = 3;
+      $("btnBegin").disabled = true; $("btnCancel").hidden = true; holdScreen();
+      var n = 3, myDt = dt;
       (function tick() {
-        if (!turn) return;
+        if (dt !== myDt) return;
         if (n === 0) { beginTurn(); return; }
         $("countNum").textContent = n; beep(520, 0.1); n--; setTimeout(tick, 650);
       })();
     };
   }
 
+  function sendTurn() {
+    var got = dt.words.filter(function (w) { return w.by; }).length;
+    act({ turn: { id: dt.id, phase: dt.phase, got: got, passed: dt.words.length - got, left: Math.ceil(dt.left), paused: dt.paused,
+      words: dt.phase === "review" ? dt.words.map(function (w) { return { w: w.w, by: w.by }; }) : null } });
+  }
+
+  function guessers() {
+    if (mode !== "online") return [];
+    return game.teams.map(function (t, i) { return { pid: t.pid, name: t.name, i: i }; }).filter(function (x) { return x.i !== game.current; });
+  }
+
   function beginTurn() {
-    holdScreen();
-    turn.phase = "play";
-    turn.endAt = performance.now() + state.time * 1000;
-    var c = turn.cat, circ = 2 * Math.PI * 52;
+    dt.phase = "play"; dt.endAt = performance.now() + game.time * 1000; dt.left = game.time;
+    var c = dt.cat, circ = 2 * Math.PI * 52, gs = guessers();
+    var gotButtons = gs.length
+      ? '<div class="guessers">' + gs.map(function (x) { return '<button class="btn good" type="button" data-by="' + esc(x.pid) + '" style="background:' + COLORS[x.i] + ';color:#141414">' + esc(x.name) + " got it</button>"; }).join("") + "</div>" +
+        '<button class="btn bad" id="btnPass" type="button" style="width:100%;padding:14px">Pass</button>'
+      : '<div class="actions"><button class="btn bad" id="btnPass" type="button">Pass</button><button class="btn good" id="btnGot" type="button">Got it</button></div>';
     $("turnBody").innerHTML =
       '<div class="timer" id="timer"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="none" stroke="#2a4851" stroke-width="10"/>' +
       '<circle id="timerArc" cx="60" cy="60" r="52" fill="none" stroke="' + c.hex + '" stroke-width="10" stroke-linecap="round" stroke-dasharray="' + circ + '" stroke-dashoffset="0"/></svg>' +
-      '<div class="num" id="timerNum">' + state.time + "</div></div>" +
-      '<div class="card" id="card"><div class="band" style="background:' + c.color + '"></div>' +
-      '<div class="label" style="color:#555">' + c.name + '</div><div class="word" id="word"></div></div>' +
-      '<div class="actions"><button class="btn bad" id="btnPass" type="button">Pass</button><button class="btn good" id="btnGot" type="button">Got it</button></div>' +
+      '<div class="num" id="timerNum">' + game.time + "</div></div>" +
+      '<div class="card" id="card"><div class="band" style="background:' + c.color + '"></div><div class="label" style="color:#555">' + c.name + '</div><div class="word" id="word"></div></div>' +
+      gotButtons +
       '<div class="tally"><span>Got <b id="nGot">0</b></span><span>Passed <b id="nPass">0</b></span></div>' +
       '<div class="row" style="justify-content:center"><button class="btn ghost small" id="btnPause" type="button">Pause</button></div>' +
-      '<div class="hint">Keyboard: Space or Enter = Got it, P = Pass</div>';
+      (gs.length ? "" : '<div class="hint">Keyboard: Space or Enter = Got it, P = Pass</div>');
     // keyboard presses are handled by the keydown listener; ignore their synthetic clicks
-    $("btnGot").onclick = function (e) { if (e.detail !== 0) answer(true); };
-    $("btnPass").onclick = function (e) { if (e.detail !== 0) answer(false); };
+    if ($("btnGot")) $("btnGot").onclick = function (e) { if (e.detail !== 0) answer("team"); };
+    $("btnPass").onclick = function (e) { if (e.detail !== 0) answer(null); };
+    [].forEach.call(document.querySelectorAll("[data-by]"), function (b) { b.onclick = function () { answer(b.dataset.by); }; });
     $("btnPause").onclick = togglePause;
-    nextWord();
-    runTimer(circ);
+    nextWord(); sendTurn(); runTimer(circ);
   }
 
   function nextWord() {
-    turn.current = draw(turn.cat.id);
-    var card = $("card"), w = $("word");
-    w.textContent = turn.current;
+    var deck = deckFor(dt.cat.id, game.seed);
+    dt.current = deck[(dt.deckStart + dt.drawn) % deck.length]; dt.drawn++;
+    var card = $("card"); $("word").textContent = dt.current;
     card.classList.remove("flip"); void card.offsetWidth; card.classList.add("flip");
-    save();
   }
 
-  function answer(ok) {
-    if (!turn || turn.phase !== "play" || turn.paused) return;
-    turn.words.push({ w: turn.current, ok: ok });
-    beep(ok ? 880 : 300, ok ? 0.12 : 0.15, ok ? "triangle" : "sine");
-    $("nGot").textContent = turn.words.filter(function (x) { return x.ok; }).length;
-    $("nPass").textContent = turn.words.filter(function (x) { return !x.ok; }).length;
-    nextWord();
+  function answer(by) {
+    if (!dt || dt.phase !== "play" || dt.paused) return;
+    dt.words.push({ w: dt.current, by: by });
+    beep(by ? 880 : 300, by ? 0.12 : 0.15, by ? "triangle" : "sine");
+    var got = dt.words.filter(function (w) { return w.by; }).length;
+    $("nGot").textContent = got; $("nPass").textContent = dt.words.length - got;
+    nextWord(); sendTurn();
   }
 
   function togglePause() {
-    if (!turn || turn.phase !== "play") return;
-    if (turn.paused) {
-      turn.paused = false; turn.endAt = performance.now() + turn.left * 1000;
-      $("btnPause").textContent = "Pause"; $("word").style.visibility = "";
-      $("btnGot").disabled = $("btnPass").disabled = false;
-    } else {
-      turn.paused = true; turn.left = Math.max(0, (turn.endAt - performance.now()) / 1000);
-      $("btnPause").textContent = "Resume"; $("word").style.visibility = "hidden";
-      $("btnGot").disabled = $("btnPass").disabled = true;
-    }
+    if (!dt || dt.phase !== "play") return;
+    dt.paused = !dt.paused;
+    if (!dt.paused) dt.endAt = performance.now() + dt.left * 1000;
+    $("btnPause").textContent = dt.paused ? "Resume" : "Pause";
+    $("word").style.visibility = dt.paused ? "hidden" : "";
+    [].forEach.call($("turnBody").querySelectorAll("#btnGot,#btnPass,[data-by]"), function (b) { b.disabled = dt.paused; });
+    sendTurn();
   }
 
+  var timerHandle = null;
   function stopTimer() { if (timerHandle) cancelAnimationFrame(timerHandle); timerHandle = null; }
   function runTimer(circ) {
-    var lastSec = state.time;
-    stopTimer();
+    var lastSec = game.time; stopTimer();
     (function frame() {
-      if (!turn || turn.phase !== "play") return;
-      var left = turn.paused ? turn.left : Math.max(0, (turn.endAt - performance.now()) / 1000);
-      var sec = Math.ceil(left);
+      if (!dt || dt.phase !== "play") return;
+      if (!dt.paused) dt.left = Math.max(0, (dt.endAt - performance.now()) / 1000);
+      var sec = Math.ceil(dt.left);
       $("timerNum").textContent = sec;
-      $("timerArc").setAttribute("stroke-dashoffset", String(circ * (1 - left / state.time)));
+      $("timerArc").setAttribute("stroke-dashoffset", String(circ * (1 - dt.left / game.time)));
       $("timer").classList.toggle("hurry", sec <= 5);
-      if (!turn.paused && sec !== lastSec) { if (sec <= 5 && sec > 0) beep(1000, 0.05, "square", 0.08); lastSec = sec; }
-      if (left <= 0) { timeUp(); return; }
+      if (sec !== lastSec) { if (sec <= 5 && sec > 0) beep(1000, 0.05, "square", 0.08); lastSec = sec; sendTurn(); }
+      if (dt.left <= 0) { timeUp(); return; }
       timerHandle = requestAnimationFrame(frame);
     })();
   }
 
   function timeUp() {
-    stopTimer(); releaseScreen();
-    beep(180, 0.6, "sawtooth", 0.18);
-    turn.phase = "review";
-    // The word on screen when time ran out goes on the list unticked; tick it if it was guessed in time.
-    if (turn.current) turn.words.push({ w: turn.current, ok: false, last: true });
-    renderReview();
+    stopTimer(); beep(180, 0.6, "sawtooth", 0.18);
+    dt.phase = "review";
+    // the word on screen at the buzzer goes on the list unticked
+    if (dt.current) dt.words.push({ w: dt.current, by: null, last: true });
+    renderReview(false); sendTurn();
   }
 
-  function renderReview() {
-    var t = state.teams[state.current];
-    var got = turn.words.filter(function (x) { return x.ok; }).length;
+  function renderReview(fromRender) {
+    if (fromRender && $("turnBody").dataset.kind === "review") return;
+    $("turnBody").dataset.kind = "review";
+    var cur = game.teams[game.current], online = mode === "online", gs = guessers();
+    var got = dt.words.filter(function (w) { return w.by; }).length;
+    var label = function (w) { return w.by ? (online ? nameOfPid(w.by) : "Got it") : "Not counted"; };
     $("turnBody").innerHTML =
       '<span class="label">Time\'s up</span>' +
-      '<h2 style="margin:0">' + esc(t.name) + " moves " + got + " space" + (got === 1 ? "" : "s") + "</h2>" +
-      '<p class="hint" style="margin:0">Tap a word to fix it: untick words where the describer slipped up, or tick the last word if it was shouted in time.</p>' +
-      '<ul class="review-list" id="reviewList">' + (turn.words.length ? turn.words.map(function (x, i) {
+      '<h2 style="margin:0">' + (online ? "You move " : esc(cur.name) + " moves ") + got + " space" + (got === 1 ? "" : "s") + "</h2>" +
+      '<p class="hint" style="margin:0">' + (online ? "Tap a word to change who guessed it, or to strike it if you slipped up. Each guesser moves one space per word." : "Tap a word to fix it: untick words where the describer slipped up, or tick the last word if it was shouted in time.") + "</p>" +
+      '<ul class="review-list" id="reviewList">' + (dt.words.length ? dt.words.map(function (x, i) {
         return '<li><span class="w">' + esc(x.w) + (x.last ? ' <span class="hint">(on screen at the buzzer)</span>' : "") + "</span>" +
-          '<button type="button" data-i="' + i + '" class="' + (x.ok ? "ok" : "no") + '">' + (x.ok ? "Got it" : "Not counted") + "</button></li>";
+          '<button type="button" data-i="' + i + '" class="' + (x.by ? "ok" : "no") + '">' + esc(label(x)) + "</button></li>";
       }).join("") : '<li><span class="w">No words this time.</span></li>') + "</ul>" +
-      '<button class="btn big" id="btnMove" type="button">' + (got ? "Move " + got + " and pass the phone" : "Pass the phone") + "</button>";
+      '<button class="btn big" id="btnMove" type="button">' + (got ? "Move the pieces" : "End my turn") + "</button>";
     $("reviewList").onclick = function (e) {
       var b = e.target.closest("[data-i]"); if (!b) return;
-      var w = turn.words[+b.dataset.i]; w.ok = !w.ok; renderReview();
+      var w = dt.words[+b.dataset.i];
+      if (!online) w.by = w.by ? null : "team";
+      else {
+        // cycle: nobody → each guesser in turn → nobody
+        var ids = gs.map(function (x) { return x.pid; }), k = w.by ? ids.indexOf(w.by) : -1;
+        w.by = k + 1 < ids.length ? ids[k + 1] : null;
+      }
+      $("turnBody").dataset.kind = ""; renderReview(false); sendTurn();
     };
-    $("btnMove").onclick = function () { finishTurn(got); };
+    $("btnMove").onclick = function () {
+      var d = dt; dt = null; closeOverlay();
+      act({ done: { id: d.id, drawn: d.drawn, words: d.words.map(function (w) { return { by: w.by }; }) }, turn: null, claim: null });
+    };
   }
 
-  function finishTurn(steps) {
-    $("turnView").hidden = true;
-    var t = state.teams[state.current];
-    turn = null;
-    var target = Math.min(state.spaces, t.pos + steps);
-    $("btnGo").disabled = true;
-    (function stepOnce() {
-      if (t.pos < target) {
-        t.pos++; beep(440 + t.pos * 6, 0.05, "triangle", 0.08);
-        renderBoard(); renderSide();
-        setTimeout(stepOnce, 230);
-        return;
-      }
-      if (t.pos >= state.spaces) {
-        state.winner = state.current; save(); renderBoard(); renderSide(); showWin(); return;
-      }
-      state.current = (state.current + 1) % state.teams.length;
-      if (state.current === 0) state.round++;
-      $("btnGo").disabled = false;
-      save(); renderBoard(); renderSide();
-    })();
+  // ================= Win =================
+  function playAgain() {
+    game.teams.forEach(function (t) { t.pos = 0; });
+    game.current = 0; game.winner = null; game.round = 1; game.turnId++; game.turn = null;
+    game.seed = Math.floor(Math.random() * 1e9); game.used = {};
+    closeOverlay(); publish();
   }
 
   function showWin() {
-    var t = state.teams[state.winner];
-    $("turnView").hidden = false;
+    var g = game, w = g.teams[g.winner];
+    $("turnView").hidden = false; $("turnBody").dataset.kind = "win";
+    var canRestart = isHost;
     $("turnBody").innerHTML =
-      '<span class="label">Round ' + state.round + "</span>" +
-      '<p class="win-title" style="color:' + t.color + '">' + esc(t.name) + "</p>" +
-      '<h2 style="margin:0">talked their way all the way round. They win!</h2>' +
+      '<span class="label">Round ' + g.round + "</span>" +
+      '<p class="win-title" style="color:' + COLORS[g.winner] + '">' + esc(w.name) + "</p>" +
+      '<h2 style="margin:0">talked ' + (mode === "online" && me() === g.winner ? "your" : "their") + " way all the way round and wins!</h2>" +
       '<div class="row" style="justify-content:center">' +
-      '<button class="btn big" id="btnAgain" type="button">Play again, same teams</button>' +
-      '<button class="btn ghost" id="btnSetup" type="button">Change teams</button></div>';
+      (canRestart ? '<button class="btn big" id="btnAgain" type="button">Play again</button>' : '<p class="hint">Waiting for the host to start another game.</p>') +
+      '<button class="btn ghost" id="btnCloseWin" type="button">Look at the board</button></div>';
     [523, 659, 784, 1047].forEach(function (f, i) { setTimeout(function () { beep(f, 0.18, "triangle"); }, i * 140); });
-    $("btnAgain").onclick = function () {
-      state.teams.forEach(function (tm) { tm.pos = 0; });
-      state.current = 0; state.winner = null; state.round = 1;
-      $("turnView").hidden = true; save(); renderBoard(); renderSide(); $("btnGo").disabled = false;
-    };
-    $("btnSetup").onclick = function () {
-      setup.teams = state.teams.map(function (tm) { return tm.name; });
-      state = null; save(); $("turnView").hidden = true;
-      $("gameView").hidden = true; $("topTools").hidden = true; $("setupView").hidden = false; renderSetup();
-    };
+    if ($("btnAgain")) $("btnAgain").onclick = playAgain;
+    $("btnCloseWin").onclick = function () { dismissedWin = g.seq; closeOverlay(); };
+    dismissedWin = -2;
   }
+  // only fire the fanfare once per win
+  var _showWin = showWin;
+  showWin = function () { if ($("turnBody").dataset.kind === "win") return; _showWin(); };
+
+  // ================= Top bar =================
+  $("btnSound").onclick = function () { soundOn = !soundOn; $("btnSound").textContent = "Sound: " + (soundOn ? "on" : "off"); };
+  $("btnNew").onclick = function () {
+    var b = $("btnNew");
+    if (!b.dataset.confirm) {
+      b.dataset.confirm = "1"; b.textContent = "Tap again to " + (mode === "local" ? "quit" : "leave");
+      setTimeout(function () { if (b.dataset.confirm) { delete b.dataset.confirm; b.textContent = mode === "local" ? "New game" : "Leave game"; } }, 3000);
+      return;
+    }
+    delete b.dataset.confirm;
+    if (mode === "local") { store("chatterwheel.game", null); inGame = false; game = null; dt = null; closeOverlay(); showSetup(); }
+    else { if (isHost) store("chatterwheel.online", null); leaveGame(null); }
+  };
 
   document.addEventListener("keydown", function (e) {
-    if (!turn || turn.phase !== "play") return;
-    if (e.target && e.target.tagName === "BUTTON" && (e.key === " " || e.key === "Enter")) e.preventDefault();
-    if (e.key === " " || e.key === "Enter") { e.preventDefault(); answer(true); }
-    else if (e.key === "p" || e.key === "P" || e.key === "ArrowRight") answer(false);
+    if (!dt || dt.phase !== "play" || mode !== "local") return;
+    if (e.key === " " || e.key === "Enter") { e.preventDefault(); answer("team"); }
+    else if (e.key === "p" || e.key === "P" || e.key === "ArrowRight") answer(null);
   });
 
-  // ---------------- Boot ----------------
+  // ================= Boot =================
   renderSetup();
-  var saved = loadSaved();
-  if (saved && !saved.winner && saved.teams) { state = saved; showGame(); }
+  initRoom();
 })();
 </script>
 </body>
